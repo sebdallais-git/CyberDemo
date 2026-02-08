@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BaselPharma — R&D AI Factory Infrastructure</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: #060810;
+            color: #e0e0e0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            min-height: 100vh;
+            overflow-x: auto;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(30,41,59,0.25) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(30,41,59,0.25) 1px, transparent 1px);
+            background-size: 48px 48px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* ── Header ── */
+        header {
+            position: relative;
+            z-index: 1;
+            padding: 24px 32px 18px;
+            border-bottom: 1px solid #1e293b;
+            background: linear-gradient(180deg, rgba(6,8,16,0.98), rgba(6,8,16,0.92));
+        }
+        .header-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+        .brand-logo {
+            font-size: 22px;
+            font-weight: 700;
+            color: #f1f5f9;
+            letter-spacing: -0.5px;
+        }
+        .brand-logo .dell { color: #a855f7; }
+        .brand-sep { width: 1px; height: 22px; background: #334155; }
+        .brand-sub { font-size: 13px; color: #64748b; letter-spacing: 0.3px; }
+        .header-meta {
+            display: flex;
+            gap: 20px;
+            font-size: 11px;
+            color: #475569;
+        }
+        .header-meta span {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .meta-dot {
+            width: 6px; height: 6px;
+            border-radius: 50%;
+        }
+        .meta-dot.green  { background: #22c55e; box-shadow: 0 0 6px rgba(34,197,94,0.5); }
+        .meta-dot.purple { background: #a855f7; box-shadow: 0 0 6px rgba(168,85,247,0.5); }
+        .meta-dot.blue   { background: #3b82f6; box-shadow: 0 0 6px rgba(59,130,246,0.5); }
+        .meta-dot.amber  { background: #f59e0b; box-shadow: 0 0 6px rgba(245,158,11,0.5); }
+
+        /* Pipeline bar */
+        .pipeline-bar {
+            margin-top: 14px;
+            display: flex;
+            gap: 2px;
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+        }
+        .pipe-seg {
+            flex: 1;
+            padding: 5px 8px;
+            text-align: center;
+            border-radius: 4px;
+            background: rgba(15,23,42,0.6);
+            border: 1px solid #1e293b;
+        }
+        .pipe-seg.s-purple { border-color: rgba(168,85,247,0.3); color: #c084fc; }
+        .pipe-seg.s-blue   { border-color: rgba(59,130,246,0.3); color: #60a5fa; }
+        .pipe-seg.s-green  { border-color: rgba(34,197,94,0.3); color: #4ade80; }
+        .pipe-seg.s-amber  { border-color: rgba(245,158,11,0.3); color: #fbbf24; }
+        .pipe-seg.s-red    { border-color: rgba(239,68,68,0.3); color: #f87171; }
+
+        /* ── Main ── */
+        main {
+            position: relative;
+            z-index: 1;
+            padding: 28px 20px 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .infra-row {
+            display: flex;
+            align-items: stretch;
+            width: 100%;
+            max-width: 1560px;
+            min-height: 540px;
+        }
+
+        /* ── Zone ── */
+        .zone {
+            flex: 1;
+            min-width: 210px;
+            padding: 14px 12px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+        .zone-head {
+            margin-bottom: 14px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--zc, #334155);
+        }
+        .zone-level {
+            font-size: 9px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--zc, #64748b);
+            opacity: 0.8;
+            margin-bottom: 3px;
+        }
+        .zone-title { font-size: 14px; font-weight: 700; color: #f1f5f9; }
+        .zone-sub { font-size: 10px; color: #64748b; margin-top: 3px; line-height: 1.3; }
+
+        .z-data    { --zc: #a855f7; --glow: 168,85,247; }
+        .z-compute { --zc: #3b82f6; --glow: 59,130,246; }
+        .z-mlops   { --zc: #22c55e; --glow: 34,197,94; }
+        .z-protect { --zc: #f59e0b; --glow: 245,158,11; }
+        .z-vault   { --zc: #ef4444; --glow: 239,68,68; }
+
+        /* ── Product Card ── */
+        .product {
+            background: rgba(15, 23, 42, 0.7);
+            border: 1px solid #1e293b;
+            border-radius: 10px;
+            padding: 14px 14px 12px;
+            margin-bottom: 10px;
+            cursor: default;
+            transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            backdrop-filter: blur(4px);
+        }
+        .product:hover {
+            border-color: var(--zc, #007DB8);
+            box-shadow:
+                0 0 20px rgba(var(--glow, 0,125,184), 0.3),
+                0 0 40px rgba(var(--glow, 0,125,184), 0.12),
+                inset 0 0 20px rgba(var(--glow, 0,125,184), 0.06);
+            transform: translateY(-3px);
+            background: rgba(15, 23, 42, 0.95);
+        }
+        .product:hover .p-icon svg {
+            filter: drop-shadow(0 0 6px rgba(var(--glow, 0,125,184), 0.5));
+        }
+        .product:hover .p-led-green { filter: drop-shadow(0 0 4px rgba(34,197,94,0.8)); }
+        .product:hover .p-led-blue  { filter: drop-shadow(0 0 4px rgba(59,130,246,0.8)); }
+        .product:hover .p-led-purple { filter: drop-shadow(0 0 4px rgba(168,85,247,0.8)); }
+
+        .p-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 8px; }
+        .p-icon { width: 56px; height: 30px; display: flex; align-items: center; }
+        .p-icon svg { transition: filter 0.35s ease; }
+        .p-badge {
+            font-size: 8px; padding: 2px 6px; border-radius: 4px;
+            font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; flex-shrink: 0;
+        }
+        .badge-dell { background: rgba(0,125,184,0.12); color: #0ea5e9; border: 1px solid rgba(0,125,184,0.25); }
+        .badge-sw   { background: rgba(168,85,247,0.12); color: #c084fc; border: 1px solid rgba(168,85,247,0.25); }
+        .badge-nv   { background: rgba(118,185,0,0.12); color: #76b900; border: 1px solid rgba(118,185,0,0.25); }
+
+        .p-name { font-size: 13px; font-weight: 600; color: #f1f5f9; }
+        .p-model { font-size: 10px; color: var(--zc, #007DB8); font-family: 'SF Mono', 'Menlo', monospace; margin-top: 2px; }
+        .p-role { font-size: 10px; color: #64748b; margin-top: 6px; line-height: 1.4; }
+        .p-specs { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+        .p-spec {
+            font-size: 9px; padding: 2px 6px; border-radius: 3px;
+            background: rgba(30,41,59,0.6); color: #94a3b8; border: 1px solid #1e293b; font-family: 'SF Mono', monospace;
+        }
+
+        /* ── Connector ── */
+        .conn {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            width: 36px; min-width: 36px; position: relative;
+        }
+        .conn-hz {
+            width: 100%; height: 2px; background: #1e293b; position: relative; overflow: hidden;
+        }
+        .conn-hz::after {
+            content: ''; position: absolute; top: -1px; left: -16px;
+            width: 16px; height: 4px;
+            background: linear-gradient(90deg, transparent, rgba(var(--flow-c, 100,116,139), 0.7));
+            border-radius: 2px; animation: flow 2.5s linear infinite;
+        }
+        @keyframes flow { 0% { left: -16px; } 100% { left: calc(100% + 16px); } }
+        .conn-arrow { font-size: 10px; color: #475569; margin: 4px 0; }
+        .conn-label {
+            font-size: 8px; color: #334155; writing-mode: vertical-rl;
+            text-orientation: mixed; letter-spacing: 1px; text-transform: uppercase;
+        }
+        .conn.c-purple { --flow-c: 168,85,247; }
+        .conn.c-blue   { --flow-c: 59,130,246; }
+        .conn.c-green  { --flow-c: 34,197,94; }
+        .conn.c-amber  { --flow-c: 245,158,11; }
+
+        /* ── Air Gap ── */
+        .air-gap {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            width: 72px; min-width: 72px; position: relative;
+        }
+        .air-gap-inner {
+            width: 100%; height: 100%;
+            border-left: 2px dashed rgba(239,68,68,0.35);
+            border-right: 2px dashed rgba(239,68,68,0.35);
+            display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
+            animation: gap-pulse 3s ease-in-out infinite;
+            background: repeating-linear-gradient(0deg, transparent 0px, transparent 10px, rgba(239,68,68,0.025) 10px, rgba(239,68,68,0.025) 11px);
+        }
+        @keyframes gap-pulse {
+            0%, 100% { border-color: rgba(239,68,68,0.25); box-shadow: inset 0 0 30px rgba(239,68,68,0.03); }
+            50%      { border-color: rgba(239,68,68,0.55); box-shadow: inset 0 0 40px rgba(239,68,68,0.08); }
+        }
+        .gap-lock {
+            width: 32px; height: 32px; border: 2px solid rgba(239,68,68,0.5); border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            animation: lock-glow 3s ease-in-out infinite;
+        }
+        @keyframes lock-glow {
+            0%, 100% { box-shadow: 0 0 10px rgba(239,68,68,0.15); }
+            50%      { box-shadow: 0 0 20px rgba(239,68,68,0.35); }
+        }
+        .gap-lock svg { width: 14px; height: 14px; }
+        .gap-label { font-size: 8px; font-weight: 700; color: #ef4444; text-transform: uppercase; letter-spacing: 2px; writing-mode: vertical-rl; }
+        .gap-proto { font-size: 7px; color: rgba(239,68,68,0.5); writing-mode: vertical-rl; letter-spacing: 1px; }
+
+        .net-strip { margin-top: auto; padding-top: 10px; border-top: 1px dashed rgba(30,41,59,0.6); text-align: center; }
+        .net-strip code { font-size: 9px; color: #334155; font-family: 'SF Mono', monospace; }
+
+        /* ── Legend ── */
+        .legend {
+            margin-top: 28px; padding: 16px 24px; background: rgba(15,23,42,0.4);
+            border: 1px solid #1e293b; border-radius: 10px; max-width: 1560px; width: 100%;
+            display: flex; align-items: center; gap: 28px; flex-wrap: wrap;
+        }
+        .legend-title { font-size: 10px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 1.5px; }
+        .legend-item { display: flex; align-items: center; gap: 7px; font-size: 11px; color: #94a3b8; }
+        .legend-swatch { width: 10px; height: 10px; border-radius: 3px; }
+
+        .back-link {
+            position: fixed; bottom: 20px; right: 20px; z-index: 100;
+            font-size: 12px; color: #475569; text-decoration: none; padding: 8px 14px;
+            border: 1px solid #1e293b; border-radius: 8px; background: rgba(6,8,16,0.9);
+            backdrop-filter: blur(8px); transition: all 0.2s;
+        }
+        .back-link:hover { color: #94a3b8; border-color: #334155; }
+
+        /* ── Attack State ── */
+        .attack-toggle {
+            position: fixed; bottom: 20px; left: 20px; z-index: 100;
+            font-size: 13px; font-weight: 600; color: #f87171; padding: 10px 18px;
+            border: 1px solid rgba(239,68,68,0.4); border-radius: 8px;
+            background: rgba(6,8,16,0.9); backdrop-filter: blur(8px);
+            cursor: pointer; font-family: inherit; -webkit-tap-highlight-color: transparent;
+            transition: all 0.3s; display: flex; align-items: center; gap: 8px;
+        }
+        .attack-toggle:hover { background: rgba(127,29,29,0.3); border-color: rgba(239,68,68,0.7); box-shadow: 0 0 20px rgba(239,68,68,0.15); }
+        .attack-toggle .toggle-dot { width: 8px; height: 8px; border-radius: 50%; background: #475569; transition: all 0.3s; }
+        body.attack-active .attack-toggle { border-color: #22c55e; color: #4ade80; }
+        body.attack-active .attack-toggle:hover { background: rgba(21,128,61,0.2); border-color: rgba(34,197,94,0.7); box-shadow: 0 0 20px rgba(34,197,94,0.15); }
+        body.attack-active .attack-toggle .toggle-dot { background: #22c55e; box-shadow: 0 0 6px rgba(34,197,94,0.6); }
+
+        body.attack-active .product[data-attack="compromised"] {
+            border-color: rgba(239,68,68,0.6) !important;
+            animation: comp-pulse 2s ease-in-out infinite;
+        }
+        @keyframes comp-pulse {
+            0%, 100% { box-shadow: 0 0 15px rgba(239,68,68,0.15), inset 0 0 15px rgba(239,68,68,0.03); }
+            50%      { box-shadow: 0 0 30px rgba(239,68,68,0.35), inset 0 0 20px rgba(239,68,68,0.06); }
+        }
+        body.attack-active .product[data-attack="at-risk"] {
+            border-color: rgba(245,158,11,0.5) !important;
+            animation: risk-pulse 2.5s ease-in-out infinite;
+        }
+        @keyframes risk-pulse {
+            0%, 100% { box-shadow: 0 0 12px rgba(245,158,11,0.1); }
+            50%      { box-shadow: 0 0 24px rgba(245,158,11,0.25); }
+        }
+        body.attack-active .product[data-attack="protected"] {
+            border-color: rgba(34,197,94,0.4) !important;
+            box-shadow: 0 0 12px rgba(34,197,94,0.12);
+        }
+
+        .attack-label {
+            display: none; align-items: center; gap: 5px; margin-top: 8px;
+            padding: 4px 8px; border-radius: 5px; font-size: 9px;
+            font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; line-height: 1;
+        }
+        .attack-label .al-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+        body.attack-active .attack-label { display: flex; }
+        .attack-label.al-red { background: rgba(239,68,68,0.1); color: #f87171; border: 1px solid rgba(239,68,68,0.25); }
+        .attack-label.al-red .al-dot { background: #ef4444; box-shadow: 0 0 6px rgba(239,68,68,0.6); animation: dot-blink 1s infinite; }
+        .attack-label.al-amber { background: rgba(245,158,11,0.1); color: #fbbf24; border: 1px solid rgba(245,158,11,0.25); }
+        .attack-label.al-amber .al-dot { background: #f59e0b; box-shadow: 0 0 6px rgba(245,158,11,0.6); }
+        .attack-label.al-green { background: rgba(34,197,94,0.1); color: #4ade80; border: 1px solid rgba(34,197,94,0.2); }
+        .attack-label.al-green .al-dot { background: #22c55e; box-shadow: 0 0 6px rgba(34,197,94,0.5); }
+        @keyframes dot-blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+        body.attack-active .hdr-pipeline .meta-dot { background: #ef4444 !important; box-shadow: 0 0 6px rgba(239,68,68,0.6) !important; }
+        body.attack-active .hdr-pipeline span:last-child { color: #f87171 !important; }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="header-row">
+        <div class="brand">
+            <div class="brand-logo">Basel<span class="dell">Pharma</span></div>
+            <div class="brand-sep"></div>
+            <div class="brand-sub">R&D AI Factory &mdash; Dell Technologies + NVIDIA + Databricks</div>
+        </div>
+        <div class="header-meta">
+            <span class="hdr-pipeline"><span class="meta-dot green"></span> Pipeline Active</span>
+            <span><span class="meta-dot purple"></span> GPU Cluster Online</span>
+            <span><span class="meta-dot blue"></span> Vault Sealed</span>
+            <span><span class="meta-dot amber"></span> BPX-7721 Phase III</span>
+        </div>
+    </div>
+    <div class="pipeline-bar">
+        <div class="pipe-seg s-purple">Data Lakehouse</div>
+        <div class="pipe-seg s-blue">GPU Training</div>
+        <div class="pipe-seg s-green">MLOps / Experiment Tracking</div>
+        <div class="pipe-seg s-amber">Data Protection</div>
+        <div class="pipe-seg s-red">Cyber Vault</div>
+    </div>
+</header>
+
+<main>
+<div class="infra-row">
+
+    <!-- ============================== -->
+    <!-- ZONE 1: Data Lakehouse         -->
+    <!-- ============================== -->
+    <div class="zone z-data">
+        <div class="zone-head">
+            <div class="zone-level">Data Layer</div>
+            <div class="zone-title">AI Data Lakehouse</div>
+            <div class="zone-sub">Dell PowerScale + Databricks Unity Catalog</div>
+        </div>
+
+        <!-- PowerScale AI Data Lake -->
+        <div class="product">
+            <div class="p-top">
+                <div class="p-icon">
+                    <svg viewBox="0 0 56 30" width="56" height="28">
+                        <rect x="1" y="1" width="54" height="12" rx="2" fill="#0f172a" stroke="#334155"/>
+                        <rect x="4" y="3" width="5" height="8" rx="0.5" fill="#1e293b" stroke="#334155" stroke-width="0.5"/>
+                        <rect x="10" y="3" width="5" height="8" rx="0.5" fill="#1e293b" stroke="#334155" stroke-width="0.5"/>
+                        <rect x="16" y="3" width="5" height="8" rx="0.5" fill="#1e293b" stroke="#334155" stroke-width="0.5"/>
+                        <rect x="22" y="3" width="5" height="8" rx="0.5" fill="#1e293b" stroke="#334155" stroke-width="0.5"/>
+                        <rect x="28" y="3" width="5" height="8" rx="0.5" fill="#1e293b" stroke="#334155" stroke-width="0.5"/>
+                        <circle cx="46" cy="5" r="1.5" class="p-led-green" fill="#22c55e"/>
+                        <circle cx="46" cy="9" r="1.5" class="p-led-blue" fill="#3b82f6"/>
+                        <rect x="1" y="16" width="54" height="12" rx="2" fill="#0f172a" stroke="#334155"/>
+                        <rect x="4" y="18" width="5" height="8" rx="0.5" fill="#1e293b" stroke="#334155" stroke-width="0.5"/>
+                        <rect x="10" y="18" width="5" height="8" rx="0.5" fill="#1e293b" stroke="#334155" stroke-width="0.5"/>
+                        <rect x="16" y="18" width="5" height="8" rx="0.5" fill="#1e293b" stroke="#334155" stroke-width="0.5"/>
+                        <rect x="22" y="18" width="5" height="8" rx="0.5" fill="#1e293b" stroke="#334155" stroke-width="0.5"/>
+                        <rect x="28" y="18" width="5" height="8" rx="0.5" fill="#1e293b" stroke="#334155" stroke-width="0.5"/>
+                        <circle cx="46" cy="20" r="1.5" class="p-led-green" fill="#22c55e"/>
+                        <circle cx="46" cy="24" r="1.5" class="p-led-green" fill="#22c55e"/>
+                    </svg>
+                </div>
+                <span class="p-badge badge-dell">Dell</span>
+            </div>
+            <div class="p-name">Dell PowerScale F710</div>
+            <div class="p-model">AI-DATA-01 — OneFS 9.8</div>
+            <div class="p-role">Scale-out AI data lake. Stores molecular structures, genomics datasets, and training data. NFS/S3 multiprotocol for GPU direct access.</div>
+            <div class="p-specs">
+                <span class="p-spec">8 nodes</span>
+                <span class="p-spec">480 TB</span>
+                <span class="p-spec">NFS + S3</span>
+            </div>
+        </div>
+
+        <!-- Databricks Unity Catalog -->
+        <div class="product">
+            <div class="p-top">
+                <div class="p-icon">
+                    <svg viewBox="0 0 56 28" width="56" height="26">
+                        <path d="M28,2 L46,10 L28,18 L10,10 Z" fill="rgba(168,85,247,0.08)" stroke="#a855f7" stroke-width="1"/>
+                        <path d="M28,10 L46,18 L28,26 L10,18 Z" fill="rgba(168,85,247,0.04)" stroke="#a855f7" stroke-width="0.7"/>
+                        <text x="28" y="14" text-anchor="middle" fill="#c084fc" font-size="6" font-weight="600" font-family="system-ui">UNITY</text>
+                    </svg>
+                </div>
+                <span class="p-badge badge-sw">Databricks</span>
+            </div>
+            <div class="p-name">Databricks Unity Catalog</div>
+            <div class="p-model">Data Governance + Lineage</div>
+            <div class="p-role">Centralized governance for all R&D data assets. Column-level access control on patient data, IP classification for molecular structures.</div>
+            <div class="p-specs">
+                <span class="p-spec">14K tables</span>
+                <span class="p-spec">ACL</span>
+                <span class="p-spec">Lineage</span>
+            </div>
+        </div>
+
+        <!-- Dell ObjectScale -->
+        <div class="product">
+            <div class="p-top">
+                <div class="p-icon">
+                    <svg viewBox="0 0 56 24" width="56" height="22">
+                        <rect x="1" y="2" width="54" height="20" rx="2" fill="#0f172a" stroke="#334155"/>
+                        <rect x="4" y="5" width="8" height="5" rx="1" fill="#1e293b" stroke="#334155" stroke-width="0.5"/>
+                        <rect x="14" y="5" width="8" height="5" rx="1" fill="#1e293b" stroke="#334155" stroke-width="0.5"/>
+                        <rect x="4" y="13" width="8" height="5" rx="1" fill="#1e293b" stroke="#334155" stroke-width="0.5"/>
+                        <rect x="14" y="13" width="8" height="5" rx="1" fill="#1e293b" stroke="#334155" stroke-width="0.5"/>
+                        <circle cx="46" cy="8" r="2" class="p-led-green" fill="#22c55e"/>
+                        <circle cx="46" cy="15" r="2" class="p-led-blue" fill="#3b82f6"/>
+                    </svg>
+                </div>
+                <span class="p-badge badge-dell">Dell</span>
+            </div>
+            <div class="p-name">Dell ObjectScale</div>
+            <div class="p-model">S3-Compatible — Delta Lake</div>
+            <div class="p-role">Object storage backend for Databricks Delta Lake tables. Stores Parquet files, checkpoints, and Delta logs on-prem.</div>
+            <div class="p-specs">
+                <span class="p-spec">2.4 PB</span>
+                <span class="p-spec">S3 API</span>
+            </div>
+        </div>
+
+        <div class="net-strip"><code>VLAN 100 &mdash; 10.100.0.0/16</code></div>
+    </div>
+
+    <!-- Connector -->
+    <div class="conn c-purple">
+        <div class="conn-hz" style="--flow-c:168,85,247"></div>
+        <span class="conn-arrow">&rsaquo;</span>
+        <div class="conn-label">RDMA</div>
+    </div>
+
+    <!-- ============================== -->
+    <!-- ZONE 2: GPU Compute            -->
+    <!-- ============================== -->
+    <div class="zone z-compute">
+        <div class="zone-head">
+            <div class="zone-level">Compute Layer</div>
+            <div class="zone-title">GPU Training Cluster</div>
+            <div class="zone-sub">Dell AI Factory + NVIDIA</div>
+        </div>
+
+        <!-- XE9680 -->
+        <div class="product">
+            <div class="p-top">
+                <div class="p-icon">
+                    <svg viewBox="0 0 56 28" width="56" height="26">
+                        <rect x="1" y="2" width="54" height="24" rx="2" fill="#0f172a" stroke="#334155"/>
+                        <rect x="4" y="5" width="10" height="6" rx="1" fill="#1e293b" stroke="#76b900" stroke-width="0.7"/>
+                        <rect x="16" y="5" width="10" height="6" rx="1" fill="#1e293b" stroke="#76b900" stroke-width="0.7"/>
+                        <rect x="28" y="5" width="10" height="6" rx="1" fill="#1e293b" stroke="#76b900" stroke-width="0.7"/>
+                        <rect x="4" y="14" width="10" height="6" rx="1" fill="#1e293b" stroke="#76b900" stroke-width="0.7"/>
+                        <rect x="16" y="14" width="10" height="6" rx="1" fill="#1e293b" stroke="#76b900" stroke-width="0.7"/>
+                        <rect x="28" y="14" width="10" height="6" rx="1" fill="#1e293b" stroke="#76b900" stroke-width="0.7"/>
+                        <text x="9" y="10" text-anchor="middle" fill="#76b900" font-size="4" font-family="monospace">GPU</text>
+                        <text x="21" y="10" text-anchor="middle" fill="#76b900" font-size="4" font-family="monospace">GPU</text>
+                        <text x="33" y="10" text-anchor="middle" fill="#76b900" font-size="4" font-family="monospace">GPU</text>
+                        <circle cx="48" cy="8" r="2" class="p-led-green" fill="#22c55e"/>
+                        <circle cx="48" cy="15" r="2" class="p-led-purple" fill="#a855f7"/>
+                        <circle cx="48" cy="22" r="2" class="p-led-green" fill="#22c55e"/>
+                    </svg>
+                </div>
+                <span class="p-badge badge-nv">NVIDIA</span>
+            </div>
+            <div class="p-name">Dell PowerEdge XE9680</div>
+            <div class="p-model">GPU-TRAIN-01..04 — 8x H100 each</div>
+            <div class="p-role">Primary training cluster. 32x NVIDIA H100 80GB GPUs across 4 nodes. Runs molecular dynamics simulations and protein folding models for BPX-7721.</div>
+            <div class="p-specs">
+                <span class="p-spec">32x H100</span>
+                <span class="p-spec">2.56 TB VRAM</span>
+                <span class="p-spec">NVLink</span>
+            </div>
+        </div>
+
+        <!-- R760xa Inference -->
+        <div class="product">
+            <div class="p-top">
+                <div class="p-icon">
+                    <svg viewBox="0 0 56 24" width="56" height="22">
+                        <rect x="1" y="2" width="54" height="20" rx="2" fill="#0f172a" stroke="#334155"/>
+                        <rect x="4" y="5" width="8" height="6" rx="1" fill="#1e293b" stroke="#76b900" stroke-width="0.7"/>
+                        <rect x="14" y="5" width="8" height="6" rx="1" fill="#1e293b" stroke="#76b900" stroke-width="0.7"/>
+                        <rect x="24" y="5" width="8" height="6" rx="1" fill="#1e293b" stroke="#76b900" stroke-width="0.7"/>
+                        <rect x="34" y="5" width="8" height="6" rx="1" fill="#1e293b" stroke="#76b900" stroke-width="0.7"/>
+                        <circle cx="48" cy="8" r="1.8" class="p-led-green" fill="#22c55e"/>
+                        <circle cx="48" cy="15" r="1.8" class="p-led-blue" fill="#3b82f6"/>
+                    </svg>
+                </div>
+                <span class="p-badge badge-nv">NVIDIA</span>
+            </div>
+            <div class="p-name">Dell PowerEdge R760xa</div>
+            <div class="p-model">GPU-INF-01..02 — 4x L40S each</div>
+            <div class="p-role">Inference servers for QSAR model scoring, virtual screening, and ADMET prediction. Serves the R&D scientists' real-time queries.</div>
+            <div class="p-specs">
+                <span class="p-spec">8x L40S</span>
+                <span class="p-spec">384 GB VRAM</span>
+            </div>
+        </div>
+
+        <!-- Networking -->
+        <div class="product">
+            <div class="p-top">
+                <div class="p-icon">
+                    <svg viewBox="0 0 56 18" width="56" height="18">
+                        <rect x="1" y="1" width="54" height="16" rx="2" fill="#0f172a" stroke="#334155"/>
+                        <rect x="4" y="4" width="3" height="4" rx="0.5" fill="#1e293b" stroke="#3b82f6" stroke-width="0.5"/>
+                        <rect x="9" y="4" width="3" height="4" rx="0.5" fill="#1e293b" stroke="#3b82f6" stroke-width="0.5"/>
+                        <rect x="14" y="4" width="3" height="4" rx="0.5" fill="#1e293b" stroke="#3b82f6" stroke-width="0.5"/>
+                        <rect x="19" y="4" width="3" height="4" rx="0.5" fill="#1e293b" stroke="#3b82f6" stroke-width="0.5"/>
+                        <rect x="24" y="4" width="3" height="4" rx="0.5" fill="#1e293b" stroke="#3b82f6" stroke-width="0.5"/>
+                        <rect x="4" y="10" width="3" height="4" rx="0.5" fill="#1e293b" stroke="#3b82f6" stroke-width="0.5"/>
+                        <rect x="9" y="10" width="3" height="4" rx="0.5" fill="#1e293b" stroke="#3b82f6" stroke-width="0.5"/>
+                        <circle cx="46" cy="6" r="1.5" class="p-led-green" fill="#22c55e"/>
+                        <circle cx="46" cy="12" r="1.5" class="p-led-green" fill="#22c55e"/>
+                    </svg>
+                </div>
+                <span class="p-badge badge-dell">Dell</span>
+            </div>
+            <div class="p-name">Dell Z9664F-ON</div>
+            <div class="p-model">400GbE AI Fabric Switch</div>
+            <div class="p-role">GPU-to-storage fabric. 400GbE RoCE v2 for RDMA-based training. Sub-microsecond latency between GPU nodes and PowerScale.</div>
+            <div class="p-specs">
+                <span class="p-spec">64x 400G</span>
+                <span class="p-spec">RoCE v2</span>
+            </div>
+        </div>
+
+        <div class="net-strip"><code>GPU Fabric &mdash; 10.200.0.0/16</code></div>
+    </div>
+
+    <!-- Connector -->
+    <div class="conn c-blue">
+        <div class="conn-hz" style="--flow-c:59,130,246"></div>
+        <span class="conn-arrow">&rsaquo;</span>
+        <div class="conn-label">API</div>
+    </div>
+
+    <!-- ============================== -->
+    <!-- ZONE 3: MLOps                  -->
+    <!-- ============================== -->
+    <div class="zone z-mlops">
+        <div class="zone-head">
+            <div class="zone-level">MLOps Layer</div>
+            <div class="zone-title">Experiment Tracking</div>
+            <div class="zone-sub">Databricks MLflow + Model Registry</div>
+        </div>
+
+        <!-- MLflow -->
+        <div class="product">
+            <div class="p-top">
+                <div class="p-icon">
+                    <svg viewBox="0 0 56 28" width="56" height="26">
+                        <circle cx="28" cy="14" r="11" fill="none" stroke="#22c55e" stroke-width="1"/>
+                        <path d="M20,14 L24,10 L28,14 L32,8 L36,12" fill="none" stroke="#22c55e" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        <circle cx="36" cy="12" r="2" fill="#22c55e" opacity="0.5"/>
+                    </svg>
+                </div>
+                <span class="p-badge badge-sw">Databricks</span>
+            </div>
+            <div class="p-name">Databricks MLflow</div>
+            <div class="p-model">Experiment Tracking + Registry</div>
+            <div class="p-role">Tracks 2,847 experiments across 18 months. Model versioning, hyperparameter logging, and artifact storage for drug discovery models.</div>
+            <div class="p-specs">
+                <span class="p-spec">2,847 runs</span>
+                <span class="p-spec">142 models</span>
+            </div>
+        </div>
+
+        <!-- Databricks Workspace -->
+        <div class="product">
+            <div class="p-top">
+                <div class="p-icon">
+                    <svg viewBox="0 0 56 28" width="56" height="26">
+                        <rect x="6" y="2" width="44" height="20" rx="2" fill="#0a1628" stroke="#334155"/>
+                        <text x="28" y="10" text-anchor="middle" fill="#22c55e" font-size="5" font-family="monospace">&gt;_</text>
+                        <text x="28" y="17" text-anchor="middle" fill="#4ade80" font-size="5" font-weight="600" font-family="system-ui">NOTEBOOKS</text>
+                        <rect x="16" y="24" width="24" height="3" rx="1" fill="#1e293b"/>
+                    </svg>
+                </div>
+                <span class="p-badge badge-sw">Databricks</span>
+            </div>
+            <div class="p-name">Databricks Workspace</div>
+            <div class="p-model">R&D Notebooks + Jobs</div>
+            <div class="p-role">87 active notebooks for molecular simulation, QSAR modeling, ADMET prediction. 12 scheduled training jobs on Dell GPU cluster.</div>
+            <div class="p-specs">
+                <span class="p-spec">87 notebooks</span>
+                <span class="p-spec">12 jobs</span>
+            </div>
+        </div>
+
+        <!-- ServiceNow + Snowflake -->
+        <div class="product">
+            <div class="p-top">
+                <div class="p-icon">
+                    <svg viewBox="0 0 56 28" width="56" height="26">
+                        <circle cx="16" cy="14" r="10" fill="none" stroke="#4ade80" stroke-width="1" stroke-dasharray="4,2"/>
+                        <text x="16" y="17" text-anchor="middle" fill="#4ade80" font-size="7" font-family="monospace">SN</text>
+                        <circle cx="40" cy="14" r="10" fill="none" stroke="#60a5fa" stroke-width="1" stroke-dasharray="4,2"/>
+                        <text x="40" y="17" text-anchor="middle" fill="#60a5fa" font-size="7" font-family="monospace">SF</text>
+                    </svg>
+                </div>
+                <span class="p-badge badge-sw">SaaS</span>
+            </div>
+            <div class="p-name">ServiceNow + Snowflake</div>
+            <div class="p-model">ITSM + SIEM Analytics</div>
+            <div class="p-role">Snowflake monitors API access patterns and detects anomalous Databricks activity. ServiceNow manages incident lifecycle.</div>
+            <div class="p-specs">
+                <span class="p-spec">REST API</span>
+                <span class="p-spec">SIEM</span>
+            </div>
+        </div>
+
+        <div class="net-strip"><code>VLAN 150 &mdash; 10.150.0.0/16</code></div>
+    </div>
+
+    <!-- Connector -->
+    <div class="conn c-green">
+        <div class="conn-hz" style="--flow-c:34,197,94"></div>
+        <span class="conn-arrow">&rsaquo;</span>
+        <div class="conn-label">DD Boost</div>
+    </div>
+
+    <!-- ============================== -->
+    <!-- ZONE 4: Data Protection        -->
+    <!-- ============================== -->
+    <div class="zone z-protect">
+        <div class="zone-head">
+            <div class="zone-level">Protection Layer</div>
+            <div class="zone-title">Data Protection</div>
+            <div class="zone-sub">Dell PowerProtect</div>
+        </div>
+
+        <!-- PPDM -->
+        <div class="product">
+            <div class="p-top">
+                <div class="p-icon">
+                    <svg viewBox="0 0 56 28" width="56" height="26">
+                        <path d="M28,2 L48,10 L48,22 L28,28 L8,22 L8,10 Z" fill="#0f172a" stroke="#f59e0b" stroke-width="1"/>
+                        <path d="M28,2 L48,10 L28,16 L8,10 Z" fill="rgba(245,158,11,0.08)"/>
+                        <text x="28" y="20" text-anchor="middle" fill="#fbbf24" font-size="6" font-weight="600" font-family="system-ui">PPDM</text>
+                    </svg>
+                </div>
+                <span class="p-badge badge-dell">Dell</span>
+            </div>
+            <div class="p-name">PowerProtect Data Manager</div>
+            <div class="p-model">PPDM 19.17 — AI Workloads</div>
+            <div class="p-role">Backup orchestration for AI Factory. Policy-based protection of PowerScale datasets, MLflow artifacts, and model checkpoints.</div>
+            <div class="p-specs">
+                <span class="p-spec">SLA-driven</span>
+                <span class="p-spec">4h RPO</span>
+            </div>
+        </div>
+
+        <!-- DD9900 -->
+        <div class="product">
+            <div class="p-top">
+                <div class="p-icon">
+                    <svg viewBox="0 0 56 30" width="56" height="28">
+                        <rect x="1" y="1" width="54" height="28" rx="2" fill="#0f172a" stroke="#334155"/>
+                        <rect x="4" y="4" width="4" height="10" rx="0.5" fill="#1e293b" stroke="#334155" stroke-width="0.5"/>
+                        <rect x="9" y="4" width="4" height="10" rx="0.5" fill="#1e293b" stroke="#334155" stroke-width="0.5"/>
+                        <rect x="14" y="4" width="4" height="10" rx="0.5" fill="#1e293b" stroke="#334155" stroke-width="0.5"/>
+                        <rect x="19" y="4" width="4" height="10" rx="0.5" fill="#1e293b" stroke="#334155" stroke-width="0.5"/>
+                        <rect x="24" y="4" width="4" height="10" rx="0.5" fill="#1e293b" stroke="#334155" stroke-width="0.5"/>
+                        <rect x="4" y="17" width="4" height="10" rx="0.5" fill="#1e293b" stroke="#334155" stroke-width="0.5"/>
+                        <rect x="9" y="17" width="4" height="10" rx="0.5" fill="#1e293b" stroke="#334155" stroke-width="0.5"/>
+                        <rect x="14" y="17" width="4" height="10" rx="0.5" fill="#1e293b" stroke="#334155" stroke-width="0.5"/>
+                        <rect x="19" y="17" width="4" height="10" rx="0.5" fill="#1e293b" stroke="#334155" stroke-width="0.5"/>
+                        <rect x="24" y="17" width="4" height="10" rx="0.5" fill="#1e293b" stroke="#334155" stroke-width="0.5"/>
+                        <circle cx="44" cy="8" r="2" class="p-led-green" fill="#22c55e"/>
+                        <circle cx="44" cy="15" r="2" class="p-led-blue" fill="#3b82f6"/>
+                        <circle cx="44" cy="22" r="2" class="p-led-green" fill="#22c55e"/>
+                    </svg>
+                </div>
+                <span class="p-badge badge-dell">Dell</span>
+            </div>
+            <div class="p-name">PowerProtect DD9900</div>
+            <div class="p-model">Data Domain — R&D Backup</div>
+            <div class="p-role">Primary dedup target for AI workloads. 480 TB of training data, model weights, and experiment artifacts. Source for vault replication.</div>
+            <div class="p-specs">
+                <span class="p-spec">3.6 PB</span>
+                <span class="p-spec">DD Boost</span>
+            </div>
+        </div>
+
+        <div class="net-strip"><code>VLAN 200 &mdash; 10.200.0.0/24</code></div>
+    </div>
+
+    <!-- ============================== -->
+    <!-- AIR GAP                        -->
+    <!-- ============================== -->
+    <div class="air-gap">
+        <div class="air-gap-inner">
+            <div class="gap-label">Air Gap</div>
+            <div class="gap-lock">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round">
+                    <rect x="5" y="11" width="14" height="11" rx="2"/>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                </svg>
+            </div>
+            <div class="gap-proto">DD MTree<br/>Repl.</div>
+        </div>
+    </div>
+
+    <!-- ============================== -->
+    <!-- ZONE 5: Cyber Recovery Vault   -->
+    <!-- ============================== -->
+    <div class="zone z-vault">
+        <div class="zone-head">
+            <div class="zone-level">Isolated Vault</div>
+            <div class="zone-title">Cyber Recovery</div>
+            <div class="zone-sub">Air-gapped &amp; immutable</div>
+        </div>
+
+        <!-- Cyber Recovery -->
+        <div class="product">
+            <div class="p-top">
+                <div class="p-icon">
+                    <svg viewBox="0 0 56 28" width="56" height="26">
+                        <path d="M28,1 L52,14 L28,27 L4,14 Z" fill="#0f172a" stroke="#ef4444" stroke-width="1.2"/>
+                        <path d="M20,11 L28,7 L36,11 L28,15 Z" fill="rgba(239,68,68,0.12)" stroke="#ef4444" stroke-width="0.5"/>
+                        <text x="28" y="23" text-anchor="middle" fill="#f87171" font-size="5" font-weight="600" font-family="system-ui">CR VAULT</text>
+                    </svg>
+                </div>
+                <span class="p-badge badge-dell">Dell</span>
+            </div>
+            <div class="p-name">PowerProtect Cyber Recovery</div>
+            <div class="p-model">CR 19.22 — AI Vault Manager</div>
+            <div class="p-role">Orchestrates air gap for AI data. Protects training datasets, model weights, MLflow artifacts, and experiment history. 90-day PIT retention.</div>
+            <div class="p-specs">
+                <span class="p-spec">Immutable</span>
+                <span class="p-spec">Locked</span>
+            </div>
+        </div>
+
+        <!-- CyberSense -->
+        <div class="product">
+            <div class="p-top">
+                <div class="p-icon">
+                    <svg viewBox="0 0 56 28" width="56" height="26">
+                        <circle cx="28" cy="14" r="12" fill="none" stroke="#ef4444" stroke-width="1"/>
+                        <circle cx="28" cy="14" r="7" fill="none" stroke="#ef4444" stroke-width="0.7" stroke-dasharray="3,2"/>
+                        <circle cx="28" cy="14" r="2.5" fill="#ef4444" opacity="0.4"/>
+                    </svg>
+                </div>
+                <span class="p-badge badge-dell">Dell</span>
+            </div>
+            <div class="p-name">Dell CyberSense</div>
+            <div class="p-model">ML Analytics — AI Data</div>
+            <div class="p-role">Full-content inspection of vault copies. Detects encrypted training data, corrupted model weights, and tampered experiment logs.</div>
+            <div class="p-specs">
+                <span class="p-spec">99.99%</span>
+                <span class="p-spec">AI-aware</span>
+            </div>
+        </div>
+
+        <!-- DD Vault Copy -->
+        <div class="product">
+            <div class="p-top">
+                <div class="p-icon">
+                    <svg viewBox="0 0 56 30" width="56" height="28">
+                        <rect x="1" y="1" width="54" height="28" rx="2" fill="#0f172a" stroke="#7f1d1d"/>
+                        <rect x="4" y="4" width="4" height="10" rx="0.5" fill="#1e293b" stroke="#7f1d1d" stroke-width="0.5"/>
+                        <rect x="9" y="4" width="4" height="10" rx="0.5" fill="#1e293b" stroke="#7f1d1d" stroke-width="0.5"/>
+                        <rect x="14" y="4" width="4" height="10" rx="0.5" fill="#1e293b" stroke="#7f1d1d" stroke-width="0.5"/>
+                        <rect x="19" y="4" width="4" height="10" rx="0.5" fill="#1e293b" stroke="#7f1d1d" stroke-width="0.5"/>
+                        <rect x="4" y="17" width="4" height="10" rx="0.5" fill="#1e293b" stroke="#7f1d1d" stroke-width="0.5"/>
+                        <rect x="9" y="17" width="4" height="10" rx="0.5" fill="#1e293b" stroke="#7f1d1d" stroke-width="0.5"/>
+                        <rect x="14" y="17" width="4" height="10" rx="0.5" fill="#1e293b" stroke="#7f1d1d" stroke-width="0.5"/>
+                        <rect x="19" y="17" width="4" height="10" rx="0.5" fill="#1e293b" stroke="#7f1d1d" stroke-width="0.5"/>
+                        <circle cx="44" cy="8" r="2" fill="#ef4444"/>
+                        <circle cx="44" cy="15" r="2" fill="#f59e0b"/>
+                        <circle cx="44" cy="22" r="2" fill="#ef4444"/>
+                    </svg>
+                </div>
+                <span class="p-badge badge-dell">Dell</span>
+            </div>
+            <div class="p-name">PowerProtect DD9900</div>
+            <div class="p-model">Data Domain — Vault Copy</div>
+            <div class="p-role">Isolated vault storage. Retention-locked copies of all AI training data, model checkpoints, and Databricks artifacts.</div>
+            <div class="p-specs">
+                <span class="p-spec">1.8 PB</span>
+                <span class="p-spec">Ret-Lock</span>
+            </div>
+        </div>
+
+        <div class="net-strip"><code>ISOLATED &mdash; No external route</code></div>
+    </div>
+
+</div>
+
+<!-- Legend -->
+<div class="legend">
+    <span class="legend-title">Legend</span>
+    <div class="legend-item"><span class="legend-swatch" style="background:rgba(0,125,184,0.2); border:1px solid #007DB8;"></span>Dell Hardware</div>
+    <div class="legend-item"><span class="legend-swatch" style="background:rgba(118,185,0,0.2); border:1px solid #76b900;"></span>NVIDIA GPU</div>
+    <div class="legend-item"><span class="legend-swatch" style="background:rgba(168,85,247,0.2); border:1px solid #a855f7;"></span>Databricks / SaaS</div>
+    <div class="legend-item"><span class="legend-swatch" style="background:rgba(239,68,68,0.2); border:1px solid #ef4444;"></span>Air-Gapped</div>
+    <div class="legend-item" style="margin-left:auto; color:#475569; font-size:10px;">
+        BaselPharma R&D &mdash; Dell AI Factory Reference Architecture &mdash; v1.0
+    </div>
+</div>
+
+</main>
+
+<a href="/" class="back-link">&larr; Dashboard</a>
+
+<button class="attack-toggle" id="attack-toggle">
+    <span class="toggle-dot"></span>
+    <span class="toggle-text">Simulate Attack</span>
+</button>
+
+<script>
+(function() {
+    const ATTACK_MAP = {
+        'AI-DATA-01':         { level: 'compromised', label: '2.1 TB Training Data Encrypted in 47s', color: 'red' },
+        'Data Governance':    { level: 'compromised', label: 'Service Principal Stolen — Bulk Export', color: 'red' },
+        'S3-Compatible':      { level: 'at-risk',     label: 'Delta Lake Tables at Risk', color: 'amber' },
+        'GPU-TRAIN-01':       { level: 'at-risk',     label: 'Simulation Results Wiped — Wiper Payload', color: 'amber' },
+        'GPU-INF-01':         { level: 'at-risk',     label: 'Model Serving Disrupted', color: 'amber' },
+        'Experiment Tracking': { level: 'compromised', label: '2,847 Experiments Encrypted — 18mo Lost', color: 'red' },
+        'R&D Notebooks':      { level: 'compromised', label: 'Notebooks + Scheduled Jobs Destroyed', color: 'red' },
+        'CR 19.22':           { level: 'protected',   label: 'Air-Gapped — No Network Path', color: 'green' },
+        'ML Analytics':       { level: 'protected',   label: 'Ready to Scan Vault Copy', color: 'green' },
+        'Data Domain — Vault': { level: 'protected',  label: 'Retention-Locked — Immutable Copy', color: 'green' },
+    };
+
+    document.querySelectorAll('.p-model').forEach(el => {
+        const text = el.textContent;
+        for (const [key, config] of Object.entries(ATTACK_MAP)) {
+            if (text.includes(key)) {
+                const card = el.closest('.product');
+                card.dataset.attack = config.level;
+                const label = document.createElement('div');
+                label.className = 'attack-label al-' + config.color;
+                label.innerHTML = '<span class="al-dot"></span>' + config.label;
+                card.appendChild(label);
+                break;
+            }
+        }
+    });
+
+    const toggle = document.getElementById('attack-toggle');
+    const toggleText = toggle.querySelector('.toggle-text');
+
+    function setAttackState(active) {
+        document.body.classList.toggle('attack-active', active);
+        toggleText.textContent = active ? 'Clear Attack' : 'Simulate Attack';
+    }
+
+    toggle.addEventListener('click', () => {
+        setAttackState(!document.body.classList.contains('attack-active'));
+    });
+
+    if (new URLSearchParams(location.search).get('state') === 'attacked') {
+        setAttackState(true);
+    }
+})();
+</script>
+
+</body>
+</html>

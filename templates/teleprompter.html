@@ -191,6 +191,9 @@
         .script-btn.bts { border-color: #7c3aed; }
         .script-btn.bts:active { background: rgba(124,58,237,0.15); }
         .script-btn.bts .btn-label { color: #c084fc; }
+        .script-btn.ai { border-color: #9333ea; }
+        .script-btn.ai:active { background: rgba(147,51,234,0.15); }
+        .script-btn.ai .btn-label { color: #a78bfa; }
 
         /* --- Countdown overlay --- */
         #countdown-overlay {
@@ -299,8 +302,13 @@
     <p class="subtitle">Choose a script — 7s countdown before scrolling starts</p>
 
     <button class="script-btn demo" data-script="demo">
-        <div class="btn-label">Demo Video</div>
-        <div class="btn-desc">Dell Cyber Recovery product demo. You sell Dell. ~2 min.</div>
+        <div class="btn-label">Ransomware Demo</div>
+        <div class="btn-desc">SCADA ransomware attack + Dell Cyber Recovery. You sell Dell. ~2 min.</div>
+    </button>
+
+    <button class="script-btn ai" data-script="ai-factory">
+        <div class="btn-label">AI Factory Demo</div>
+        <div class="btn-desc">APT on drug discovery AI pipeline. Dell AI Factory + Cyber Recovery. ~2 min.</div>
     </button>
 
     <button class="script-btn bts" data-script="bts">
@@ -692,7 +700,269 @@
 </template>
 
 
-<!-- BEHIND THE SCENES SCRIPT (Video 2: Sell yourself + AI) -->
+<!-- AI FACTORY SCRIPT (Video 2: Sell Dell AI Factory + Cyber Recovery) -->
+<template id="script-ai-factory">
+
+    <!-- SCENE 1: HOOK -->
+    <div class="scene">
+        <div class="scene-header">
+            <span class="scene-time">0:00</span>
+            <span class="scene-label">Hook</span>
+            <span class="scene-divider"></span>
+        </div>
+        <div class="action">
+            <span class="action-icon">&#9654;</span>
+            <span class="action-text">ON SCREEN: Dashboard idle, all 3 green dots visible. Screen recording running.</span>
+        </div>
+        <p class="narration">
+            In 2017, Merck lost <strong>$1.4 billion</strong> to a single cyberattack. NotPetya wiped forty thousand machines in under two hours. One researcher lost <em>fifteen years</em> of work.
+        </p>
+        <p class="narration" style="margin-top:20px">
+            Today, the stakes are even higher. Pharma companies run <em>AI drug discovery pipelines</em> worth billions. What happens when an APT targets <strong>that</strong>?
+        </p>
+        <p class="narration" style="margin-top:20px">
+            Let me show you.
+        </p>
+    </div>
+
+    <!-- SCENE 2: AI FACTORY INFRASTRUCTURE (clean) -->
+    <div class="scene">
+        <div class="scene-header">
+            <span class="scene-time">0:18</span>
+            <span class="scene-label">AI Factory — Clean</span>
+            <span class="scene-divider"></span>
+        </div>
+        <div class="action">
+            <span class="action-icon">&#128073;</span>
+            <span class="action-text">CLICK "AI Factory Map" button on the dashboard. Opens the AI Factory infra diagram.</span>
+        </div>
+        <p class="narration">
+            This is <em>BaselPharma's AI drug discovery factory</em> — built on <em>Dell infrastructure</em> with <span class="brand">Databricks</span>.
+        </p>
+        <div class="action">
+            <span class="action-icon">&#128433;</span>
+            <span class="action-text">Sweep left to right across all zones. Hover each product to show the glow.</span>
+        </div>
+        <p class="narration" style="margin-top:20px">
+            <em>Dell PowerScale F710</em> — a 2-petabyte AI data lake holding molecular simulation data, protein structures, and training datasets.
+        </p>
+        <div class="action">
+            <span class="action-icon">&#128433;</span>
+            <span class="action-text">Hover PowerScale F710 in the Data Lakehouse zone.</span>
+        </div>
+        <p class="narration" style="margin-top:20px">
+            <em>Dell PowerEdge XE9680</em> — eight NVIDIA H100 GPUs, running molecular dynamics simulations for drug candidate <strong>BPX-7721</strong>. This is a <span class="stat">$2.1 billion pipeline</span> — Phase III.
+        </p>
+        <div class="action">
+            <span class="action-icon">&#128433;</span>
+            <span class="action-text">Hover XE9680 in GPU Compute zone. Then the R760xa for inference.</span>
+        </div>
+        <p class="narration" style="margin-top:20px">
+            <span class="brand">Databricks</span> manages everything — <em>Unity Catalog</em> for data governance, <em>MLflow</em> tracking 2,847 experiments, and notebooks orchestrating the pipeline.
+        </p>
+        <div class="action">
+            <span class="action-icon">&#128433;</span>
+            <span class="action-text">Hover the Databricks cards in MLOps zone. Then point at the air gap + vault.</span>
+        </div>
+        <p class="narration" style="margin-top:20px">
+            And protecting it all — a <em>Dell Cyber Recovery vault</em>, air-gapped, with <em>CyberSense</em> ML analytics.
+        </p>
+        <div class="action">
+            <span class="action-icon">&#128073;</span>
+            <span class="action-text">CLICK "&#8592; Dashboard" link to return.</span>
+        </div>
+    </div>
+
+    <!-- SCENE 3: LAUNCH SCENARIO -->
+    <div class="scene">
+        <div class="scene-header">
+            <span class="scene-time">0:50</span>
+            <span class="scene-label">Launch the attack</span>
+            <span class="scene-divider"></span>
+        </div>
+        <div class="action">
+            <span class="action-icon">&#128433;</span>
+            <span class="action-text">Mouse over the 3 scenario cards. Pause on the purple AI Factory button.</span>
+        </div>
+        <p class="narration">
+            Now let's simulate what a <strong>nation-state APT</strong> does to this pipeline. Think APT41. Think NotPetya — but targeting <em>AI research</em>.
+        </p>
+    </div>
+
+    <!-- SCENE 4: SNOWFLAKE DETECTION -->
+    <div class="scene">
+        <div class="scene-header">
+            <span class="scene-time">0:56</span>
+            <span class="scene-label">Snowflake AI Detection</span>
+            <span class="scene-divider"></span>
+        </div>
+        <div class="action">
+            <span class="action-icon">&#128073;</span>
+            <span class="action-text">CLICK the "AI Factory Compromise" button NOW.</span>
+        </div>
+        <p class="narration">
+            <em>Snowflake's AI anomaly detection</em> scans the telemetry...
+        </p>
+        <div class="pause">
+            <span class="action-icon">&#9208;</span>
+            <span class="pause-text">Wait for Step 1 to complete and the Snowflake panel to appear (~4s)</span>
+        </div>
+        <p class="narration">
+            Threat detected. Multiple anomalous hosts. The AI model flagged a <strong>compromised Databricks service principal</strong> — someone stole an OAuth token and is using it to bulk-export data from Unity Catalog.
+        </p>
+        <div class="action">
+            <span class="action-icon">&#128433;</span>
+            <span class="action-text">Point at the Snowflake panel threat bars.</span>
+        </div>
+    </div>
+
+    <!-- SCENE 5: KILL CHAIN — AI FACTORY BLAST RADIUS -->
+    <div class="scene">
+        <div class="scene-header">
+            <span class="scene-time">1:10</span>
+            <span class="scene-label">Kill Chain — AI Factory</span>
+            <span class="scene-divider"></span>
+        </div>
+        <div class="action">
+            <span class="action-icon">&#128073;</span>
+            <span class="action-text">CLICK "AI Factory Map" then "Simulate Attack" button. Infrastructure shows attack state.</span>
+        </div>
+        <p class="narration">
+            Let me show you the <strong>kill chain</strong>.
+        </p>
+
+        <div class="action">
+            <span class="action-icon">&#128433;</span>
+            <span class="action-text">Hover Databricks Unity Catalog — RED. Then MLflow — RED.</span>
+        </div>
+        <p class="narration" style="margin-top:20px">
+            It started in <span class="brand">Databricks</span>. The attacker <strong>stole a service principal</strong> — an OAuth token for Unity Catalog. With that, they triggered <span class="stat">14,000 bulk export calls in 3 minutes</span>. Every dataset, every Delta Lake table — <strong>exfiltrated</strong>.
+        </p>
+        <p class="narration" style="margin-top:20px">
+            Then they hit <em>MLflow</em>. <strong>2,847 experiments encrypted</strong>. Eighteen months of drug discovery work — gone. Notebooks, scheduled jobs — <strong>destroyed</strong>.
+        </p>
+
+        <div class="action">
+            <span class="action-icon">&#128433;</span>
+            <span class="action-text">Hover the XE9680 GPU server — AMBER. Then PowerScale — RED.</span>
+        </div>
+        <p class="narration" style="margin-top:20px">
+            From there, lateral movement to the <em>Dell PowerEdge XE9680</em> GPU cluster. A <strong>wiper payload</strong> destroyed simulation results. And the <em>PowerScale data lake</em> — <span class="stat">2.1 terabytes of training data encrypted in 47 seconds</span>.
+        </p>
+
+        <div class="pause">
+            <span class="action-icon">&#9208;</span>
+            <span class="pause-text">Dramatic pause. Let the damage sink in.</span>
+        </div>
+        <p class="narration" style="margin-top:20px">
+            Four systems compromised. The entire <strong>BPX-7721 drug candidate pipeline</strong> is down. That's a <span class="stat">$2.1 billion asset</span> — Phase III, 18 months from market.
+        </p>
+        <p class="narration" style="margin-top:20px">
+            Without recovery, you're looking at <span class="stat">6 to 12 months</span> to retrain models, rerun simulations, and revalidate data. The FDA will have questions. Your board will have questions. Your competitors <strong>won't wait</strong>.
+        </p>
+
+        <p class="narration" style="margin-top:24px">
+            But look at the <strong>right side</strong>.
+        </p>
+        <div class="action">
+            <span class="action-icon">&#128433;</span>
+            <span class="action-text">Point at the pulsing AIR GAP. Hover the 3 vault products — GREEN.</span>
+        </div>
+        <p class="narration" style="margin-top:20px">
+            The <em>Dell Cyber Recovery vault</em> — <span class="stat">air-gapped</span>. No network path. The attacker can't touch it. The vault copy is <strong>retention-locked</strong> and <em>CyberSense</em> is ready to scan.
+        </p>
+        <div class="action">
+            <span class="action-icon">&#128073;</span>
+            <span class="action-text">CLICK "&#8592; Dashboard" to go back. Workflow is still running.</span>
+        </div>
+    </div>
+
+    <!-- SCENE 6: SERVICENOW + DELL CR -->
+    <div class="scene">
+        <div class="scene-header">
+            <span class="scene-time">1:35</span>
+            <span class="scene-label">ServiceNow + Dell CR</span>
+            <span class="scene-divider"></span>
+        </div>
+        <div class="pause">
+            <span class="action-icon">&#9208;</span>
+            <span class="pause-text">Step 2 should be completing — ServiceNow card appears. Steps 3-4 running.</span>
+        </div>
+        <p class="narration">
+            The workflow <em>automatically</em> created a <strong>P1 Critical</strong> ServiceNow incident with all the Snowflake detection data.
+        </p>
+        <p class="narration" style="margin-top:20px">
+            <em>Dell Cyber Recovery</em> opens the air gap, replicates, and locks down. Then <em>CyberSense</em> scans — <span class="stat">99.99% confidence</span>: corruption detected.
+        </p>
+        <div class="action">
+            <span class="action-icon">&#128433;</span>
+            <span class="action-text">Point at the ServiceNow card, the vault panel, then the CyberSense report when it appears.</span>
+        </div>
+        <p class="narration" style="margin-top:20px">
+            CyberSense identified <strong>12 corrupted files</strong> across all four AI Factory servers — and found a <em>clean point-in-time copy</em> from before the attack.
+        </p>
+    </div>
+
+    <!-- SCENE 7: RECOVERY -->
+    <div class="scene">
+        <div class="scene-header">
+            <span class="scene-time">1:50</span>
+            <span class="scene-label">Recovery & Resolution</span>
+            <span class="scene-divider"></span>
+        </div>
+        <div class="pause">
+            <span class="action-icon">&#9208;</span>
+            <span class="pause-text">Steps 6-7 completing. Recovery bar fills. Incident resolves.</span>
+        </div>
+        <p class="narration">
+            Recovery from clean PIT copy — <span class="stat">files restored</span>. Models, experiments, training data — all recovered.
+        </p>
+        <div class="action">
+            <span class="action-icon">&#128433;</span>
+            <span class="action-text">Watch recovery bar hit 100%. Incident flips to "Resolved".</span>
+        </div>
+        <p class="narration" style="margin-top:20px">
+            Think about this. Without the vault, your CISO is telling the board that <strong>18 months of AI research is gone</strong>. The Phase III timeline slips. Stock drops. Competitors gain a <span class="stat">12-month head start</span>.
+        </p>
+        <p class="narration" style="margin-top:20px">
+            With Dell Cyber Recovery — <em>minutes</em>, not months. BPX-7721 stays on track. No data loss. No regulatory finding. The board never needs to know it was that close.
+        </p>
+    </div>
+
+    <!-- SCENE 8: CLOSE -->
+    <div class="scene">
+        <div class="scene-header">
+            <span class="scene-time">2:05</span>
+            <span class="scene-label">Close</span>
+            <span class="scene-divider"></span>
+        </div>
+        <div class="action">
+            <span class="action-icon">&#128257;</span>
+            <span class="action-text">SWITCH back to Dashboard. All 7 steps green.</span>
+        </div>
+        <p class="narration">
+            From APT detection to full AI Factory recovery — <em>under two minutes</em>.
+        </p>
+        <p class="narration" style="margin-top:20px">
+            No ransom. No data loss. No FDA questions. No Phase III delay.
+        </p>
+        <p class="narration" style="margin-top:24px; font-size:36px; font-weight:600">
+            Air-gapped. AI-powered. Automated.
+        </p>
+        <p class="narration" style="margin-top:24px">
+            That's <em>Dell Cyber Recovery</em> protecting the <em>Dell AI Factory</em> — turning a <span class="stat">billion-dollar catastrophe</span> into a <em>two-minute recovery</em>.
+        </p>
+        <div class="action">
+            <span class="action-icon">&#9209;</span>
+            <span class="action-text">Hold 2 seconds. Stop recording.</span>
+        </div>
+    </div>
+
+    <div style="height:40vh"></div>
+</template>
+
+
+<!-- BEHIND THE SCENES SCRIPT (Video 3: Sell yourself + AI) -->
 <template id="script-bts">
 
     <!-- SCENE 1: HOOK -->
@@ -909,7 +1179,8 @@
 
     function startCountdown(scriptId) {
         countdownOverlay.style.display = 'flex';
-        const label = scriptId === 'demo' ? 'Demo Video' : 'Behind the Scenes';
+        const labels = { demo: 'Ransomware Demo', 'ai-factory': 'AI Factory Demo', bts: 'Behind the Scenes' };
+        const label = labels[scriptId] || scriptId;
         countdownLabel.textContent = label;
         countdownCount = countdownTotal;
         countdownNumber.textContent = countdownCount;

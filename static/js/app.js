@@ -280,7 +280,7 @@ function cyberDemo() {
         getScenarioDescription() {
             const descriptions = {
                 ransomware: "Ransomware detected on pharmaceutical SCADA systems. Batch records and temperature logs encrypted on SCADA-HIST-01. Production line B3 halted.",
-                supply_chain: "Backdoor implant discovered in Emerson DeltaV SDK v3.8.2 update. Compromised vendor update server pushed malicious firmware to DCS controllers.",
+                ai_factory: "APT compromise of R&D AI Factory. Databricks service principal stolen — MLflow experiments encrypted, molecular simulation data corrupted on PowerScale. Phase III candidate BPX-7721 at risk.",
                 data_exfil: "Slow exfiltration of GxP validation data and API synthesis routes detected via DNS TXT record queries. 4.2 GB exfiltrated over 72 hours.",
             };
             return descriptions[this.scenarioType] || "";

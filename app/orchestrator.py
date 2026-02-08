@@ -31,12 +31,14 @@ SCENARIO_DETAILS = {
         "priority": "1",
         "category": "Malware",
     },
-    ScenarioType.SUPPLY_CHAIN: {
-        "short_description": "CRITICAL: Trojanized DeltaV DCS firmware update (supply chain)",
+    ScenarioType.AI_FACTORY: {
+        "short_description": "CRITICAL: APT compromise of AI drug discovery pipeline (Dell AI Factory)",
         "description": (
-            "Backdoor implant discovered in Emerson DeltaV SDK v3.8.2 update. "
-            "Compromised vendor update server pushed malicious firmware to DCS controllers. "
-            "Potential lateral movement to MES and LIMS systems."
+            "Nation-state APT targeting R&D AI Factory. Databricks service principal compromised — "
+            "Unity Catalog credentials stolen, MLflow experiments encrypted. "
+            "Molecular simulation training data on PowerScale corrupted. "
+            "Phase III candidate BPX-7721 ($2.1B pipeline) at risk. "
+            "Dell PowerEdge XE9680 GPU cluster and PowerScale AI data lake affected."
         ),
         "priority": "1",
         "category": "Intrusion",

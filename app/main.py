@@ -53,6 +53,11 @@ async def infrastructure(request: Request):
     return templates.TemplateResponse("infrastructure.html", {"request": request})
 
 
+@app.get("/infrastructure/ai", response_class=HTMLResponse)
+async def infrastructure_ai(request: Request):
+    return templates.TemplateResponse("infrastructure_ai.html", {"request": request})
+
+
 # ── API ──────────────────────────────────────────────────────────────
 
 @app.post("/api/scenario")

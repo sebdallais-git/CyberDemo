@@ -9,7 +9,7 @@ from pydantic import BaseModel, Field
 
 class ScenarioType(str, Enum):
     RANSOMWARE = "ransomware"
-    SUPPLY_CHAIN = "supply_chain"
+    AI_FACTORY = "ai_factory"
     DATA_EXFIL = "data_exfil"
 
 
