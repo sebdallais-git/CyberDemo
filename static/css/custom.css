@@ -1,0 +1,45 @@
+/* CyberDemo — custom animations and styles */
+
+/* Air gap data flow animation (used in vault_panel.html) */
+@keyframes flow {
+    0% { transform: translateX(-100%); opacity: 0; }
+    50% { opacity: 1; }
+    100% { transform: translateX(100%); opacity: 0; }
+}
+
+.animate-flow {
+    animation: flow 1s ease-in-out infinite;
+}
+
+/* Smooth pulse for running steps */
+@keyframes step-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+}
+
+/* Scrollbar styling for dark theme */
+::-webkit-scrollbar {
+    width: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: #111827;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #374151;
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #4b5563;
+}
+
+/* Recovery progress bar fill animation */
+@keyframes progress-fill {
+    from { width: 0%; }
+}
+
+.progress-bar-animated {
+    animation: progress-fill 0.8s ease-out;
+}

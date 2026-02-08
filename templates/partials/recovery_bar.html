@@ -1,0 +1,41 @@
+<!-- Recovery progress bar — appears during/after step 6 -->
+<div class="p-5 rounded-xl border border-gray-800 bg-gray-900/50 backdrop-blur-sm">
+    <div class="flex items-center justify-between mb-3">
+        <h3 class="text-sm font-semibold text-gray-400 uppercase tracking-wider">Recovery Progress</h3>
+        <span class="text-xs px-2 py-0.5 rounded-full font-bold"
+              :class="{
+                  'bg-blue-500/20 text-blue-400': recovery.progress < 100,
+                  'bg-emerald-500/20 text-emerald-400': recovery.progress >= 100,
+              }"
+              x-text="recovery.progress >= 100 ? 'COMPLETE' : 'RESTORING...'">
+        </span>
+    </div>
+
+    <!-- Progress bar -->
+    <div class="w-full h-3 bg-gray-800 rounded-full overflow-hidden mb-3">
+        <div class="h-full rounded-full transition-all duration-1000 progress-bar-animated"
+             :class="{
+                 'bg-gradient-to-r from-blue-500 to-cyan-400': recovery.progress < 100,
+                 'bg-gradient-to-r from-emerald-500 to-emerald-400': recovery.progress >= 100,
+             }"
+             :style="'width: ' + recovery.progress + '%'">
+        </div>
+    </div>
+
+    <!-- Details -->
+    <div class="grid grid-cols-3 gap-4 text-xs">
+        <div>
+            <span class="text-gray-500 block">PIT Copy</span>
+            <span class="text-gray-300 font-mono" x-text="recovery.pit_id || '—'"></span>
+        </div>
+        <div>
+            <span class="text-gray-500 block">Files Restored</span>
+            <span class="text-gray-300 font-bold" x-text="recovery.restored_files ? recovery.restored_files.toLocaleString() : '—'"></span>
+        </div>
+        <div>
+            <span class="text-gray-500 block">Status</span>
+            <span :class="recovery.progress >= 100 ? 'text-emerald-400' : 'text-blue-400'"
+                  x-text="recovery.progress >= 100 ? 'All systems verified clean' : 'Restoring from clean copy...'"></span>
+        </div>
+    </div>
+</div>

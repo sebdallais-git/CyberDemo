@@ -1,0 +1,996 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Teleprompter — CyberDemo</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: #000;
+            color: #e0e0e0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        /* --- Scrolling container --- */
+        #prompter {
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            padding: 45vh 24px 60vh 24px;
+            will-change: transform;
+        }
+
+        /* Reading guide line */
+        #guide {
+            position: fixed;
+            top: 42vh;
+            left: 0; right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent 0%, rgba(59,130,246,0.5) 20%, rgba(59,130,246,0.5) 80%, transparent 100%);
+            z-index: 100;
+            pointer-events: none;
+            display: none;
+        }
+
+        /* --- Scene blocks --- */
+        .scene {
+            margin-bottom: 64px;
+            max-width: 680px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .scene-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 16px;
+            opacity: 0.4;
+        }
+        .scene-time {
+            font-size: 13px;
+            font-family: 'SF Mono', 'Menlo', monospace;
+            color: #3b82f6;
+            min-width: 48px;
+        }
+        .scene-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #6b7280;
+        }
+        .scene-divider {
+            flex: 1;
+            height: 1px;
+            background: #1f2937;
+        }
+
+        /* Narration text */
+        .narration {
+            font-size: 32px;
+            line-height: 1.55;
+            font-weight: 400;
+            color: #f3f4f6;
+            letter-spacing: 0.01em;
+        }
+        .narration em {
+            font-style: normal;
+            color: #60a5fa;
+            font-weight: 600;
+        }
+        .narration strong {
+            color: #f87171;
+            font-weight: 700;
+        }
+        .narration .stat {
+            color: #34d399;
+            font-weight: 600;
+        }
+        .narration .brand {
+            color: #c084fc;
+            font-weight: 600;
+        }
+
+        /* Action cues */
+        .action {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            margin: 20px 0;
+            padding: 12px 16px;
+            border-radius: 10px;
+            background: rgba(245, 158, 11, 0.08);
+            border-left: 3px solid #f59e0b;
+        }
+        .action-icon {
+            font-size: 18px;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+        .action-text {
+            font-size: 16px;
+            color: #fbbf24;
+            line-height: 1.5;
+        }
+
+        /* Pause markers */
+        .pause {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 24px 0;
+            padding: 10px 16px;
+            border-radius: 10px;
+            background: rgba(99, 102, 241, 0.08);
+            border-left: 3px solid #6366f1;
+        }
+        .pause-text {
+            font-size: 15px;
+            color: #818cf8;
+            font-style: italic;
+        }
+
+        /* --- Selection overlay --- */
+        #select-overlay {
+            position: fixed;
+            inset: 0;
+            background: #000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 400;
+        }
+        #select-overlay h1 {
+            font-size: 28px;
+            font-weight: 700;
+            color: #f3f4f6;
+            margin-bottom: 6px;
+        }
+        #select-overlay .subtitle {
+            font-size: 14px;
+            color: #6b7280;
+            margin-bottom: 40px;
+        }
+        .script-btn {
+            display: block;
+            width: 320px;
+            padding: 20px 24px;
+            margin-bottom: 16px;
+            border-radius: 14px;
+            border: 1px solid #374151;
+            background: rgba(255,255,255,0.03);
+            text-align: left;
+            cursor: pointer;
+            font-family: inherit;
+            -webkit-tap-highlight-color: transparent;
+            transition: border-color 0.2s, background 0.2s;
+        }
+        .script-btn:active {
+            background: rgba(255,255,255,0.06);
+        }
+        .script-btn .btn-label {
+            font-size: 18px;
+            font-weight: 600;
+            color: #f3f4f6;
+            margin-bottom: 4px;
+        }
+        .script-btn .btn-desc {
+            font-size: 13px;
+            color: #6b7280;
+            line-height: 1.4;
+        }
+        .script-btn.demo { border-color: #1d4ed8; }
+        .script-btn.demo:active { background: rgba(29,78,216,0.15); }
+        .script-btn.demo .btn-label { color: #60a5fa; }
+        .script-btn.bts { border-color: #7c3aed; }
+        .script-btn.bts:active { background: rgba(124,58,237,0.15); }
+        .script-btn.bts .btn-label { color: #c084fc; }
+
+        /* --- Countdown overlay --- */
+        #countdown-overlay {
+            position: fixed;
+            inset: 0;
+            background: #000;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 350;
+        }
+        #countdown-label {
+            font-size: 16px;
+            color: #6b7280;
+            margin-bottom: 16px;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+        }
+        #countdown-number {
+            font-size: 120px;
+            font-weight: 200;
+            color: #f3f4f6;
+            line-height: 1;
+            font-variant-numeric: tabular-nums;
+        }
+        #countdown-hint {
+            font-size: 14px;
+            color: #374151;
+            margin-top: 24px;
+        }
+        #countdown-adjust {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            margin-top: 32px;
+        }
+        #countdown-adjust button {
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            border: 1px solid #374151;
+            background: rgba(255,255,255,0.04);
+            color: #9ca3af;
+            font-size: 26px;
+            font-weight: 300;
+            cursor: pointer;
+            font-family: inherit;
+            -webkit-tap-highlight-color: transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        #countdown-adjust button:active {
+            background: rgba(255,255,255,0.1);
+            border-color: #6b7280;
+        }
+        #countdown-adjust .cd-label {
+            font-size: 13px;
+            color: #4b5563;
+            font-family: 'SF Mono', monospace;
+        }
+
+        /* --- Controls bar --- */
+        #controls {
+            position: fixed;
+            bottom: 0; left: 0; right: 0;
+            padding: 16px 24px;
+            background: linear-gradient(transparent, rgba(0,0,0,0.95) 40%);
+            z-index: 200;
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+        }
+        #controls button {
+            background: none;
+            border: 1px solid #374151;
+            color: #9ca3af;
+            font-size: 14px;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: inherit;
+            -webkit-tap-highlight-color: transparent;
+        }
+        #controls button:active { background: #1f2937; }
+        #controls button.primary {
+            border-color: #3b82f6;
+            color: #60a5fa;
+            font-weight: 600;
+        }
+        #speed-display {
+            font-size: 13px;
+            color: #6b7280;
+            font-family: 'SF Mono', monospace;
+        }
+
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+<!-- ====== SELECTION OVERLAY ====== -->
+<div id="select-overlay">
+    <h1>Teleprompter</h1>
+    <p class="subtitle">Choose a script — 7s countdown before scrolling starts</p>
+
+    <button class="script-btn demo" data-script="demo">
+        <div class="btn-label">Demo Video</div>
+        <div class="btn-desc">Dell Cyber Recovery product demo. You sell Dell. ~2 min.</div>
+    </button>
+
+    <button class="script-btn bts" data-script="bts">
+        <div class="btn-label">Behind the Scenes</div>
+        <div class="btn-desc">How you built it with Claude Code. You sell yourself. ~2 min.</div>
+    </button>
+</div>
+
+<!-- ====== COUNTDOWN OVERLAY ====== -->
+<div id="countdown-overlay">
+    <div id="countdown-label">Starting in</div>
+    <div id="countdown-number">7</div>
+    <div id="countdown-hint">Switch to recording app now</div>
+    <div id="countdown-adjust">
+        <button id="cd-minus">-</button>
+        <span class="cd-label">delay</span>
+        <button id="cd-plus">+</button>
+    </div>
+</div>
+
+<!-- ====== READING GUIDE ====== -->
+<div id="guide"></div>
+
+<!-- ====== SCROLLING CONTENT ====== -->
+<div id="prompter"></div>
+
+<!-- ====== CONTROLS ====== -->
+<div id="controls">
+    <button id="btn-slower">Slower</button>
+    <span id="speed-display">1.0x</span>
+    <button id="btn-pause" class="primary">Pause</button>
+    <span></span>
+    <button id="btn-faster">Faster</button>
+</div>
+
+
+<!-- ====================================================================
+     SCRIPTS DATA — both scripts stored as template fragments
+     ==================================================================== -->
+
+<!-- DEMO SCRIPT (Video 1: Sell Dell) -->
+<template id="script-demo">
+
+    <!-- SCENE 1: HOOK -->
+    <div class="scene">
+        <div class="scene-header">
+            <span class="scene-time">0:00</span>
+            <span class="scene-label">Hook</span>
+            <span class="scene-divider"></span>
+        </div>
+        <div class="action">
+            <span class="action-icon">&#9654;</span>
+            <span class="action-text">ON SCREEN: Dashboard idle, all 3 green dots visible. Screen recording running on Mac.</span>
+        </div>
+        <p class="narration">
+            What happens when <strong>ransomware</strong> hits your pharmaceutical production line at 2 AM?
+        </p>
+        <p class="narration" style="margin-top:20px">
+            Let me show you a <em>fully automated</em> detection-to-recovery workflow — running live, right now.
+        </p>
+        <div class="action">
+            <span class="action-icon">&#128433;</span>
+            <span class="action-text">Slowly mouse over the 3 green status dots in the header.</span>
+        </div>
+    </div>
+
+    <!-- SCENE 2: INFRASTRUCTURE (clean) -->
+    <div class="scene">
+        <div class="scene-header">
+            <span class="scene-time">0:10</span>
+            <span class="scene-label">Infrastructure — Clean</span>
+            <span class="scene-divider"></span>
+        </div>
+        <div class="action">
+            <span class="action-icon">&#128073;</span>
+            <span class="action-text">CLICK "Infrastructure Map" button on the dashboard. Opens the infra diagram.</span>
+        </div>
+        <p class="narration">
+            First, let me show you what we're protecting.
+        </p>
+        <p class="narration" style="margin-top:20px">
+            This is a pharma manufacturing environment running entirely on <em>Dell infrastructure</em>.
+        </p>
+        <div class="action">
+            <span class="action-icon">&#128433;</span>
+            <span class="action-text">Slowly sweep the mouse left to right across all 5 zones. Hover on products so they glow.</span>
+        </div>
+        <p class="narration" style="margin-top:20px">
+            From <em>Dell NativeEdge</em> at the plant floor, to <em>PowerEdge servers</em> running the SCADA historians, <em>PowerScale</em> bridging OT and IT —
+        </p>
+        <div class="action">
+            <span class="action-icon">&#128433;</span>
+            <span class="action-text">Hover over NativeEdge, then PowerEdge R760, then PowerScale. Pause on each to show the glow.</span>
+        </div>
+        <p class="narration" style="margin-top:20px">
+            — all the way to the <em>air-gapped Cyber Recovery vault</em> with <em>CyberSense</em> ML analytics.
+        </p>
+        <div class="action">
+            <span class="action-icon">&#128433;</span>
+            <span class="action-text">Point at the pulsing air gap, then hover Cyber Recovery and CyberSense cards.</span>
+        </div>
+        <p class="narration" style="margin-top:20px">
+            Everything is green. Production is running. GxP data flowing normally.
+        </p>
+        <div class="action">
+            <span class="action-icon">&#128073;</span>
+            <span class="action-text">CLICK "&#8592; Dashboard" link to go back. You're on the dashboard again.</span>
+        </div>
+    </div>
+
+    <!-- SCENE 3: SET THE STAGE -->
+    <div class="scene">
+        <div class="scene-header">
+            <span class="scene-time">0:30</span>
+            <span class="scene-label">Set the stage</span>
+            <span class="scene-divider"></span>
+        </div>
+        <div class="action">
+            <span class="action-icon">&#128433;</span>
+            <span class="action-text">Move mouse across the 3 scenario cards. Pause on the red Ransomware button.</span>
+        </div>
+        <p class="narration">
+            I have three attack scenarios. Let's trigger the worst one — a <strong>LockBit 4.0 ransomware</strong> attack on the SCADA historian.
+        </p>
+    </div>
+
+    <!-- SCENE 4: SNOWFLAKE DETECTION -->
+    <div class="scene">
+        <div class="scene-header">
+            <span class="scene-time">0:36</span>
+            <span class="scene-label">Snowflake AI Detection</span>
+            <span class="scene-divider"></span>
+        </div>
+        <div class="action">
+            <span class="action-icon">&#128073;</span>
+            <span class="action-text">CLICK the Ransomware Attack button NOW.</span>
+        </div>
+        <p class="narration">
+            I click — and immediately, <em>Snowflake's AI anomaly detection</em> kicks in.
+        </p>
+        <p class="narration" style="margin-top:20px">
+            It's scanning hundreds of network events and endpoint telemetry in real time...
+        </p>
+        <div class="pause">
+            <span class="action-icon">&#9208;</span>
+            <span class="pause-text">Wait for Step 1 to complete and the Snowflake panel to appear (~4s)</span>
+        </div>
+        <p class="narration">And there it is.</p>
+        <p class="narration" style="margin-top:20px">
+            <strong>SCADA-HIST-01</strong> — threat score <span class="stat">9.87 out of 10</span>.
+        </p>
+        <div class="action">
+            <span class="action-icon">&#128433;</span>
+            <span class="action-text">Point at the Snowflake panel — the SCADA-HIST-01 threat bar, then the other two hosts.</span>
+        </div>
+        <p class="narration" style="margin-top:20px">
+            The AI model detected <strong>C2 callbacks to a Russian IP</strong>, shadow copy deletion, and lateral movement via SMB to two other hosts.
+        </p>
+        <p class="narration" style="margin-top:20px">
+            This is a <strong>confirmed LockBit 4.0 attack</strong>. Let me show you exactly what it did to the infrastructure.
+        </p>
+    </div>
+
+    <!-- SCENE 5: INFRASTRUCTURE (under attack — kill chain walkthrough) -->
+    <div class="scene">
+        <div class="scene-header">
+            <span class="scene-time">0:55</span>
+            <span class="scene-label">Kill Chain — Blast Radius</span>
+            <span class="scene-divider"></span>
+        </div>
+        <div class="action">
+            <span class="action-icon">&#128073;</span>
+            <span class="action-text">CLICK "Attack View" button on the dashboard. Infrastructure opens with attack state active.</span>
+        </div>
+        <p class="narration">
+            Let's trace the <strong>kill chain</strong> through our infrastructure.
+        </p>
+
+        <div class="action">
+            <span class="action-icon">&#128433;</span>
+            <span class="action-text">START on the left — hover the NativeEdge XR4000 in the Plant Floor zone. It pulses AMBER.</span>
+        </div>
+        <p class="narration" style="margin-top:20px">
+            It started here — at the <em>edge</em>. The <strong>Dell NativeEdge gateway</strong> was compromised through a phished OT operator credential. LockBit used it to establish a <strong>C2 callback</strong> to an IP in Russia — <span class="stat">185.220.101.x</span>.
+        </p>
+
+        <div class="action">
+            <span class="action-icon">&#128433;</span>
+            <span class="action-text">Move RIGHT to the OT Data Center zone. Hover the PowerEdge R760 — it pulses RED.</span>
+        </div>
+        <p class="narration" style="margin-top:20px">
+            From there, <strong>lateral movement via SMB</strong> — straight to the primary SCADA historian. This <em>Dell PowerEdge R760</em> runs the AVEVA PI server. LockBit <strong>deleted the shadow copies</strong> first, then encrypted the PI database. Eight years of batch records, temperature logs, GxP compliance data — <strong>all locked</strong>.
+        </p>
+
+        <div class="action">
+            <span class="action-icon">&#128433;</span>
+            <span class="action-text">Hover the PowerEdge R660 below it — AMBER. Then hover AVEVA PI — RED.</span>
+        </div>
+        <p class="narration" style="margin-top:20px">
+            The HA secondary — the <em>PowerEdge R660</em> — is also under attack. The ransomware is using the PI replication channel to <strong>spread encrypted data</strong> to the backup historian. And the AVEVA PI application layer? <strong>Database encrypted</strong>. No queries, no tag values, no historian access.
+        </p>
+
+        <div class="action">
+            <span class="action-icon">&#128433;</span>
+            <span class="action-text">Move to the DMZ. Hover the PowerScale F710 — AMBER.</span>
+        </div>
+        <p class="narration" style="margin-top:20px">
+            The <em>PowerScale</em> in the DMZ stores archived PI data on a shared OneFS namespace. It's <strong>at risk</strong> — the ransomware is probing SMB shares trying to reach the archives.
+        </p>
+
+        <div class="pause">
+            <span class="action-icon">&#9208;</span>
+            <span class="pause-text">Dramatic pause — let the audience absorb the damage. 2 seconds.</span>
+        </div>
+        <p class="narration" style="margin-top:20px">
+            So in under sixty seconds, LockBit has moved from edge to historian to HA replica to shared storage. <strong>Four systems compromised or at risk.</strong> Production line B3 is <strong>halted</strong>. GxP data integrity is <strong>gone</strong>.
+        </p>
+        <p class="narration" style="margin-top:20px">
+            Now let's talk about what this <em>costs</em>. A pharma production line down is <span class="stat">$500,000 to $2 million per day</span>. But the real damage? You've lost <em>data integrity</em>. The FDA will issue <strong>483 observations</strong>. You can't prove your batches were manufactured correctly — that means <strong>product recalls</strong>, potential <strong>consent decrees</strong>, and your name in the headlines for all the wrong reasons.
+        </p>
+        <p class="narration" style="margin-top:20px">
+            Without a recovery plan, you're looking at <span class="stat">three to six weeks</span> to rebuild — if you can rebuild at all. That's <span class="stat">$50 to $100 million</span> in combined losses, regulatory penalties, and reputational damage.
+        </p>
+
+        <p class="narration" style="margin-top:24px">
+            But now — look at the <strong>right side</strong> of this diagram.
+        </p>
+        <div class="action">
+            <span class="action-icon">&#128433;</span>
+            <span class="action-text">Point at the pulsing AIR GAP in the middle. Then hover all 3 vault products — they glow GREEN.</span>
+        </div>
+        <p class="narration" style="margin-top:20px">
+            The <em>Dell Cyber Recovery vault</em> is <span class="stat">completely isolated</span>. There is <strong>no network path</strong> for the ransomware to cross. The air gap is <strong>physical</strong>. The vault copy is <strong>retention-locked</strong> — immutable. CyberSense is ready to scan.
+        </p>
+        <p class="narration" style="margin-top:20px">
+            <em>That</em> is our lifeline. Let's use it.
+        </p>
+        <div class="action">
+            <span class="action-icon">&#128073;</span>
+            <span class="action-text">CLICK "&#8592; Dashboard" to go back. The demo workflow is still running.</span>
+        </div>
+    </div>
+
+    <!-- SCENE 6: SERVICENOW -->
+    <div class="scene">
+        <div class="scene-header">
+            <span class="scene-time">1:10</span>
+            <span class="scene-label">ServiceNow Incident</span>
+            <span class="scene-divider"></span>
+        </div>
+        <div class="pause">
+            <span class="action-icon">&#9208;</span>
+            <span class="pause-text">Step 2 should be completing — ServiceNow card fills in with "LIVE" badge.</span>
+        </div>
+        <p class="narration">
+            The workflow <em>automatically</em> creates a real ServiceNow incident — INC number, <strong>P1 Critical</strong> — with all the Snowflake detection data attached as a work note.
+        </p>
+        <div class="action">
+            <span class="action-icon">&#128433;</span>
+            <span class="action-text">Point at the ServiceNow Incident card — INC number and "LIVE" badge.</span>
+        </div>
+        <p class="narration" style="margin-top:20px">
+            No human had to type anything.
+        </p>
+    </div>
+
+    <!-- SCENE 7: DELL CYBER RECOVERY -->
+    <div class="scene">
+        <div class="scene-header">
+            <span class="scene-time">1:20</span>
+            <span class="scene-label">Dell Cyber Recovery</span>
+            <span class="scene-divider"></span>
+        </div>
+        <div class="pause">
+            <span class="action-icon">&#9208;</span>
+            <span class="pause-text">Step 3 running — air gap animation active (amber glow).</span>
+        </div>
+        <p class="narration">
+            Now <em>Dell Cyber Recovery</em> takes over.
+        </p>
+        <p class="narration" style="margin-top:20px">
+            Watch the air gap — it opens, replicates the data into the <em>isolated cyber vault</em>, then locks down again.
+        </p>
+        <div class="action">
+            <span class="action-icon">&#128433;</span>
+            <span class="action-text">Point at the air gap animation. Wait for Step 3 to complete.</span>
+        </div>
+        <div class="pause">
+            <span class="action-icon">&#9208;</span>
+            <span class="pause-text">Steps 4-5 running. Wait for CyberSense Report panel to appear.</span>
+        </div>
+        <p class="narration" style="margin-top:16px">
+            <em>CyberSense</em> — Dell's ML engine — scans the vault copy. <span class="stat">99.99% confidence</span>: corruption detected.
+        </p>
+        <p class="narration" style="margin-top:20px">
+            <span class="stat">Twelve</span> encrypted files identified across four compromised servers.
+        </p>
+        <div class="action">
+            <span class="action-icon">&#128433;</span>
+            <span class="action-text">Point at CyberSense Report — confidence, corrupted count, affected systems.</span>
+        </div>
+        <p class="narration" style="margin-top:20px">
+            But here's the key — CyberSense also identified a <em>clean point-in-time copy</em> from before the attack. That's our recovery point.
+        </p>
+    </div>
+
+    <!-- SCENE 8: RECOVERY -->
+    <div class="scene">
+        <div class="scene-header">
+            <span class="scene-time">1:42</span>
+            <span class="scene-label">Recovery & Resolution</span>
+            <span class="scene-divider"></span>
+        </div>
+        <div class="pause">
+            <span class="action-icon">&#9208;</span>
+            <span class="pause-text">Step 6 running — recovery bar filling. Wait for Steps 6-7 to complete.</span>
+        </div>
+        <p class="narration">
+            Recovery initiates from the clean copy — <span class="stat">1,704 files restored</span>.
+        </p>
+        <div class="action">
+            <span class="action-icon">&#128433;</span>
+            <span class="action-text">Watch recovery bar hit 100%. Point when incident flips to "Resolved" (green).</span>
+        </div>
+        <p class="narration" style="margin-top:20px">
+            Think about what just happened. Without this vault, the CISO is on a call with the board explaining <strong>weeks of downtime</strong> and a <strong>ransom demand</strong>. Instead — we restored from a <em>known-clean copy</em> in minutes. No ransom paid. No data loss. No regulatory finding.
+        </p>
+        <p class="narration" style="margin-top:20px">
+            And the workflow closes the loop: the ServiceNow incident is <em>automatically resolved</em> with a full forensic report attached.
+        </p>
+    </div>
+
+    <!-- SCENE 9: THE PROOF -->
+    <div class="scene">
+        <div class="scene-header">
+            <span class="scene-time">1:55</span>
+            <span class="scene-label">The Proof</span>
+            <span class="scene-divider"></span>
+        </div>
+        <div class="action">
+            <span class="action-icon">&#128257;</span>
+            <span class="action-text">SWITCH to the ServiceNow browser tab. Click latest INC. Scroll to Work Notes.</span>
+        </div>
+        <p class="narration">
+            And if we jump into ServiceNow — here's the real ticket.
+        </p>
+        <p class="narration" style="margin-top:20px">
+            Work notes from <em>Snowflake's AI detection</em>, <em>Dell CyberSense forensics</em>, and the full recovery report.
+        </p>
+        <div class="action">
+            <span class="action-icon">&#128433;</span>
+            <span class="action-text">Pause on Work Notes for 2-3 seconds so viewers see it's real.</span>
+        </div>
+        <p class="narration" style="margin-top:20px">
+            Every step documented. Every action <em>auditable</em>.
+        </p>
+    </div>
+
+    <!-- SCENE 10: CLOSE -->
+    <div class="scene">
+        <div class="scene-header">
+            <span class="scene-time">2:10</span>
+            <span class="scene-label">Close</span>
+            <span class="scene-divider"></span>
+        </div>
+        <div class="action">
+            <span class="action-icon">&#128257;</span>
+            <span class="action-text">SWITCH back to Dashboard. All 7 steps green.</span>
+        </div>
+        <p class="narration">
+            From detection to full recovery in <em>under two minutes</em>.
+        </p>
+        <p class="narration" style="margin-top:20px">
+            No ransom paid. No production weeks lost. No FDA warning letter. No recall. No front-page headline.
+        </p>
+        <p class="narration" style="margin-top:24px; font-size:36px; font-weight:600">
+            Automated. Auditable. Air-gapped.
+        </p>
+        <p class="narration" style="margin-top:24px">
+            That's <em>Dell Cyber Recovery</em> — turning a <span class="stat">$100 million</span> catastrophe into a <em>two-minute recovery</em>.
+        </p>
+        <div class="action">
+            <span class="action-icon">&#9209;</span>
+            <span class="action-text">Hold 2 seconds. Stop recording.</span>
+        </div>
+    </div>
+
+    <div style="height:40vh"></div>
+</template>
+
+
+<!-- BEHIND THE SCENES SCRIPT (Video 2: Sell yourself + AI) -->
+<template id="script-bts">
+
+    <!-- SCENE 1: HOOK -->
+    <div class="scene">
+        <div class="scene-header">
+            <span class="scene-time">0:00</span>
+            <span class="scene-label">Hook</span>
+            <span class="scene-divider"></span>
+        </div>
+        <div class="action">
+            <span class="action-icon">&#9654;</span>
+            <span class="action-text">ON SCREEN: The CyberDemo dashboard fully completed (all 7 steps green from a previous run).</span>
+        </div>
+        <p class="narration">
+            You just saw a live demo integrating <em>Snowflake</em>, <em>ServiceNow</em>, and <em>Dell Cyber Recovery</em> into one automated workflow.
+        </p>
+        <p class="narration" style="margin-top:20px">
+            Now here's the thing — I'm <strong>not a developer</strong>. I'm a Dell account manager.
+        </p>
+        <p class="narration" style="margin-top:20px">
+            And I built this entire thing in <em>one session</em> with <span class="brand">Claude Code</span>.
+        </p>
+    </div>
+
+    <!-- SCENE 2: WHAT IS CLAUDE CODE -->
+    <div class="scene">
+        <div class="scene-header">
+            <span class="scene-time">0:15</span>
+            <span class="scene-label">Claude Code</span>
+            <span class="scene-divider"></span>
+        </div>
+        <div class="action">
+            <span class="action-icon">&#128257;</span>
+            <span class="action-text">SWITCH to your terminal showing Claude Code (the CLI conversation). Scroll to show some of the dialogue.</span>
+        </div>
+        <p class="narration">
+            <span class="brand">Claude Code</span> is Anthropic's AI coding agent. It runs in the terminal and writes real production code — not snippets, not suggestions — <em>full applications</em>.
+        </p>
+        <p class="narration" style="margin-top:20px">
+            I described what I wanted in plain English. Claude built the architecture, wrote the backend, wired up the APIs, and created every line of frontend code.
+        </p>
+    </div>
+
+    <!-- SCENE 3: THE STACK -->
+    <div class="scene">
+        <div class="scene-header">
+            <span class="scene-time">0:32</span>
+            <span class="scene-label">The Stack</span>
+            <span class="scene-divider"></span>
+        </div>
+        <div class="action">
+            <span class="action-icon">&#128257;</span>
+            <span class="action-text">Show the project file tree in your terminal: ls or tree view of the CyberDemo folder.</span>
+        </div>
+        <p class="narration">
+            Let me show you what Claude Code built.
+        </p>
+        <p class="narration" style="margin-top:20px">
+            A <em>Python FastAPI</em> backend with real-time server-sent events.
+        </p>
+        <p class="narration" style="margin-top:20px">
+            An <em>Alpine.js</em> frontend with Tailwind CSS — the dark dashboard you just saw.
+        </p>
+        <p class="narration" style="margin-top:20px">
+            A <em>mock Dell Cyber Recovery server</em> that faithfully reproduces the real API — vault state machine, CyberSense analysis, point-in-time recovery.
+        </p>
+        <p class="narration" style="margin-top:20px">
+            And a <em>7-step orchestrator</em> that ties everything together with live SSE streaming.
+        </p>
+    </div>
+
+    <!-- SCENE 4: SNOWFLAKE INTEGRATION -->
+    <div class="scene">
+        <div class="scene-header">
+            <span class="scene-time">0:55</span>
+            <span class="scene-label">Snowflake — Real Data</span>
+            <span class="scene-divider"></span>
+        </div>
+        <div class="action">
+            <span class="action-icon">&#128257;</span>
+            <span class="action-text">SWITCH to the Snowflake console. Show the CYBER_SECURITY database, SIEM schema, tables.</span>
+        </div>
+        <p class="narration">
+            The Snowflake integration is <em>real</em>.
+        </p>
+        <p class="narration" style="margin-top:20px">
+            Claude Code created a <span class="stat">CYBER_SECURITY</span> database in my Snowflake trial account — with network events, endpoint telemetry, and ML anomaly scores.
+        </p>
+        <div class="action">
+            <span class="action-icon">&#128433;</span>
+            <span class="action-text">Click on ANOMALY_SCORES table to preview the data. Show the SCADA-HIST-01 row with 9.87 score.</span>
+        </div>
+        <p class="narration" style="margin-top:20px">
+            <span class="stat">270</span> network events. <span class="stat">164</span> endpoint events. Real SQL queries running against real Snowflake infrastructure.
+        </p>
+        <p class="narration" style="margin-top:20px">
+            When you saw that threat score of <span class="stat">9.87</span> in the demo? That came from a live Snowflake query — not a mock.
+        </p>
+    </div>
+
+    <!-- SCENE 5: SERVICENOW INTEGRATION -->
+    <div class="scene">
+        <div class="scene-header">
+            <span class="scene-time">1:15</span>
+            <span class="scene-label">ServiceNow — Real Tickets</span>
+            <span class="scene-divider"></span>
+        </div>
+        <div class="action">
+            <span class="action-icon">&#128257;</span>
+            <span class="action-text">SWITCH to ServiceNow. Show the incident list with real INC tickets from demo runs.</span>
+        </div>
+        <p class="narration">
+            Same for ServiceNow. These are <em>real incidents</em> on a real developer instance.
+        </p>
+        <div class="action">
+            <span class="action-icon">&#128433;</span>
+            <span class="action-text">Open a ticket. Scroll to Work Notes to show the Snowflake + CyberSense entries.</span>
+        </div>
+        <p class="narration" style="margin-top:20px">
+            Created via REST API, with <em>work notes</em> automatically populated from the Snowflake detection and the Dell CyberSense forensics. Then <em>auto-resolved</em> when recovery completes.
+        </p>
+    </div>
+
+    <!-- SCENE 6: THE POINT -->
+    <div class="scene">
+        <div class="scene-header">
+            <span class="scene-time">1:32</span>
+            <span class="scene-label">The Point</span>
+            <span class="scene-divider"></span>
+        </div>
+        <div class="action">
+            <span class="action-icon">&#128257;</span>
+            <span class="action-text">SWITCH back to the CyberDemo dashboard (all green, completed state).</span>
+        </div>
+        <p class="narration">
+            Here's why this matters.
+        </p>
+        <p class="narration" style="margin-top:20px">
+            I'm not showing you a Figma mockup or a slide deck. This is a <em>working application</em> with <em>live integrations</em> to three enterprise platforms.
+        </p>
+        <p class="narration" style="margin-top:20px">
+            And it took <em>one afternoon</em>.
+        </p>
+        <p class="narration" style="margin-top:24px">
+            <span class="brand">Claude Code</span> didn't just write code. It understood the Dell Cyber Recovery API, designed the state machine, built the Snowflake data model, handled ServiceNow authentication quirks — and even created <em>this teleprompter</em> I'm reading from right now.
+        </p>
+    </div>
+
+    <!-- SCENE 7: CTA -->
+    <div class="scene">
+        <div class="scene-header">
+            <span class="scene-time">1:55</span>
+            <span class="scene-label">Close</span>
+            <span class="scene-divider"></span>
+        </div>
+        <p class="narration">
+            The tools are here. The question is — what will <em>you</em> build with them?
+        </p>
+        <p class="narration" style="margin-top:24px">
+            If you want to see the full demo, check the previous post. And if you want to talk about <em>cyber recovery for regulated industries</em> — you know where to find me.
+        </p>
+        <div class="action">
+            <span class="action-icon">&#9209;</span>
+            <span class="action-text">Hold 3 seconds on dashboard. Stop recording.</span>
+        </div>
+    </div>
+
+    <div style="height:40vh"></div>
+</template>
+
+
+<script>
+(function() {
+    // --- Elements ---
+    const selectOverlay = document.getElementById('select-overlay');
+    const countdownOverlay = document.getElementById('countdown-overlay');
+    const countdownNumber = document.getElementById('countdown-number');
+    const countdownLabel = document.getElementById('countdown-label');
+    const guide = document.getElementById('guide');
+    const prompter = document.getElementById('prompter');
+    const controls = document.getElementById('controls');
+    const btnPause = document.getElementById('btn-pause');
+    const btnSlower = document.getElementById('btn-slower');
+    const btnFaster = document.getElementById('btn-faster');
+    const speedDisplay = document.getElementById('speed-display');
+
+    // --- State ---
+    const BASE_SPEED = 0.55;
+    let speed = 1.0;
+    let scrolling = false;
+    let paused = false;
+    let scrollY = 0;
+
+    // --- Script selection ---
+    document.querySelectorAll('.script-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const scriptId = btn.dataset.script;
+            const template = document.getElementById('script-' + scriptId);
+            // Load script content into prompter
+            prompter.innerHTML = template.innerHTML;
+            // Hide selection, show countdown
+            selectOverlay.style.display = 'none';
+            startCountdown(scriptId);
+        });
+    });
+
+    // --- Countdown (adjustable, default 7s) ---
+    let countdownTotal = 7;
+    let countdownCount = 7;
+    let countdownInterval = null;
+
+    const cdMinus = document.getElementById('cd-minus');
+    const cdPlus = document.getElementById('cd-plus');
+
+    function startCountdown(scriptId) {
+        countdownOverlay.style.display = 'flex';
+        const label = scriptId === 'demo' ? 'Demo Video' : 'Behind the Scenes';
+        countdownLabel.textContent = label;
+        countdownCount = countdownTotal;
+        countdownNumber.textContent = countdownCount;
+
+        countdownInterval = setInterval(() => {
+            countdownCount--;
+            if (countdownCount <= 0) {
+                clearInterval(countdownInterval);
+                countdownInterval = null;
+                countdownOverlay.style.display = 'none';
+                beginScrolling();
+            } else {
+                countdownNumber.textContent = countdownCount;
+            }
+        }, 1000);
+    }
+
+    // +/- buttons: add/remove 5 seconds to the running countdown
+    cdPlus.addEventListener('click', (e) => {
+        e.stopPropagation();
+        countdownCount += 5;
+        countdownNumber.textContent = countdownCount;
+    });
+    cdMinus.addEventListener('click', (e) => {
+        e.stopPropagation();
+        countdownCount = Math.max(1, countdownCount - 5);
+        countdownNumber.textContent = countdownCount;
+    });
+
+    // --- Begin scrolling ---
+    function beginScrolling() {
+        guide.style.display = 'block';
+        controls.style.display = 'flex';
+        scrolling = true;
+        paused = false;
+        scrollY = 0;
+        prompter.style.transform = 'translateY(0)';
+        requestAnimationFrame(scrollLoop);
+    }
+
+    // --- Scroll loop ---
+    function scrollLoop() {
+        if (!scrolling) return;
+        if (!paused) {
+            scrollY += BASE_SPEED * speed;
+            prompter.style.transform = `translateY(-${scrollY}px)`;
+        }
+        requestAnimationFrame(scrollLoop);
+    }
+
+    // --- Controls ---
+    btnPause.addEventListener('click', (e) => {
+        e.stopPropagation();
+        paused = !paused;
+        btnPause.textContent = paused ? 'Resume' : 'Pause';
+    });
+
+    btnSlower.addEventListener('click', (e) => {
+        e.stopPropagation();
+        speed = Math.max(0.3, +(speed - 0.1).toFixed(1));
+        speedDisplay.textContent = speed.toFixed(1) + 'x';
+    });
+
+    btnFaster.addEventListener('click', (e) => {
+        e.stopPropagation();
+        speed = Math.min(3.0, +(speed + 0.1).toFixed(1));
+        speedDisplay.textContent = speed.toFixed(1) + 'x';
+    });
+
+    // Tap body to pause/resume
+    document.body.addEventListener('click', (e) => {
+        if (e.target.closest('#controls') || e.target.closest('#select-overlay') || e.target.closest('#countdown-overlay')) return;
+        if (!scrolling) return;
+        paused = !paused;
+        btnPause.textContent = paused ? 'Resume' : 'Pause';
+    });
+
+    // Prevent iOS rubber-banding
+    document.body.addEventListener('touchmove', (e) => { e.preventDefault(); }, { passive: false });
+})();
+</script>
+
+</body>
+</html>

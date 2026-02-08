@@ -1,0 +1,57 @@
+<!-- ServiceNow incident card — shows real incident data -->
+<div class="p-5 rounded-xl border border-gray-800 bg-gray-900/50 backdrop-blur-sm h-full">
+    <div class="flex items-center justify-between mb-4">
+        <h3 class="text-sm font-semibold text-gray-400 uppercase tracking-wider">ServiceNow Incident</h3>
+        <span class="text-xs px-2 py-0.5 rounded-full"
+              :class="{
+                  'bg-gray-800 text-gray-500': !incident.number,
+                  'bg-blue-500/20 text-blue-400': incident.mode === 'live',
+                  'bg-gray-700 text-gray-300': incident.mode === 'mock',
+              }"
+              x-text="incident.mode === 'live' ? 'LIVE' : incident.number ? 'MOCK' : 'WAITING'">
+        </span>
+    </div>
+
+    <!-- No incident yet -->
+    <div x-show="!incident.number" class="text-center py-8">
+        <div class="text-gray-600 text-xs">No active incident</div>
+        <div class="text-gray-700 text-xs mt-1">Start a scenario to create one</div>
+    </div>
+
+    <!-- Incident details -->
+    <div x-show="incident.number" class="space-y-3">
+        <div class="flex justify-between items-center">
+            <span class="text-2xl font-bold text-white" x-text="incident.number"></span>
+            <span class="text-xs px-2 py-1 rounded font-bold"
+                  :class="{
+                      'bg-red-500/20 text-red-400': incident.state !== 'Resolved',
+                      'bg-emerald-500/20 text-emerald-400': incident.state === 'Resolved',
+                  }"
+                  x-text="incident.state || 'New'">
+            </span>
+        </div>
+
+        <div class="space-y-2 text-xs">
+            <div class="flex justify-between">
+                <span class="text-gray-500">Priority</span>
+                <span class="text-red-400 font-bold" x-text="'P' + (incident.priority || '1') + ' - Critical'"></span>
+            </div>
+            <div class="flex justify-between">
+                <span class="text-gray-500">Category</span>
+                <span class="text-gray-300" x-text="incident.category || 'Security'"></span>
+            </div>
+            <div>
+                <span class="text-gray-500 block mb-1">Description</span>
+                <p class="text-gray-300 text-xs leading-relaxed" x-text="incident.description || ''"></p>
+            </div>
+        </div>
+
+        <!-- Link to real ServiceNow (if live) -->
+        <div x-show="incident.url" class="pt-2 border-t border-gray-800">
+            <a :href="incident.url" target="_blank"
+               class="text-xs text-blue-400 hover:text-blue-300 underline">
+                Open in ServiceNow &rarr;
+            </a>
+        </div>
+    </div>
+</div>

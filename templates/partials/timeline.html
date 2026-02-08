@@ -1,0 +1,50 @@
+<!-- 7-step progress timeline — SSE-updated via Alpine.js -->
+<div class="p-5 rounded-xl border border-gray-800 bg-gray-900/50 backdrop-blur-sm">
+    <h3 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">Incident Response Timeline</h3>
+
+    <div class="space-y-3">
+        <template x-for="(step, index) in stepDefs" :key="index">
+            <div class="flex items-center gap-4">
+                <!-- Step indicator -->
+                <div class="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-500"
+                     :class="{
+                         'bg-gray-800 text-gray-500': !steps[index] || steps[index].status === 'pending',
+                         'bg-amber-500/20 text-amber-400 ring-2 ring-amber-500/50 animate-pulse': steps[index] && steps[index].status === 'running',
+                         'bg-emerald-500/20 text-emerald-400 ring-2 ring-emerald-500/50': steps[index] && steps[index].status === 'complete',
+                         'bg-red-500/20 text-red-400 ring-2 ring-red-500/50': steps[index] && steps[index].status === 'error',
+                     }">
+                    <span x-text="index + 1"></span>
+                </div>
+
+                <!-- Step label -->
+                <div class="flex-shrink-0 w-24">
+                    <span class="text-xs font-bold uppercase"
+                          :class="{
+                              'text-gray-600': !steps[index] || steps[index].status === 'pending',
+                              'text-amber-400': steps[index] && steps[index].status === 'running',
+                              'text-emerald-400': steps[index] && steps[index].status === 'complete',
+                              'text-red-400': steps[index] && steps[index].status === 'error',
+                          }"
+                          x-text="step.name"></span>
+                </div>
+
+                <!-- Step message -->
+                <div class="flex-1 min-w-0">
+                    <p class="text-xs truncate"
+                       :class="{
+                           'text-gray-600': !steps[index],
+                           'text-gray-300': steps[index] && steps[index].status === 'running',
+                           'text-gray-400': steps[index] && steps[index].status === 'complete',
+                       }"
+                       x-text="steps[index] ? steps[index].message : step.waiting"></p>
+                </div>
+
+                <!-- Timestamp -->
+                <div class="flex-shrink-0 text-xs text-gray-600"
+                     x-show="steps[index] && steps[index].timestamp"
+                     x-text="steps[index] ? formatTime(steps[index].timestamp) : ''">
+                </div>
+            </div>
+        </template>
+    </div>
+</div>

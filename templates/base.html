@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}CyberDemo{% endblock %} — BaselPharma</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+    <script src="https://unpkg.com/alpinejs@3.14.8/dist/cdn.min.js" defer></script>
+    <link rel="stylesheet" href="/static/css/custom.css">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        pharma: { DEFAULT: '#1e3a8a', light: '#3b82f6', dark: '#1e1b4b' },
+                        neon: { green: '#22d3ee', red: '#f43f5e', amber: '#f59e0b' },
+                        vault: { locked: '#6366f1', open: '#22d3ee', syncing: '#f59e0b' },
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-950 text-gray-100 min-h-screen font-mono">
+    <!-- Header -->
+    <header class="border-b border-gray-800 bg-gray-950/80 backdrop-blur-sm sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded bg-pharma flex items-center justify-center text-white font-bold text-sm">BP</div>
+                <h1 class="text-lg font-bold text-white">CyberDemo</h1>
+                <span class="text-xs text-gray-500">Snowflake + ServiceNow + Dell Cyber Recovery</span>
+            </div>
+            <div class="flex items-center gap-4 text-xs">
+                <span id="snowflake-status" class="flex items-center gap-1">
+                    <span class="w-2 h-2 rounded-full bg-gray-600"></span>
+                    <span class="text-gray-400">Snowflake</span>
+                </span>
+                <span id="snow-status" class="flex items-center gap-1">
+                    <span class="w-2 h-2 rounded-full bg-gray-600"></span>
+                    <span class="text-gray-400">ServiceNow</span>
+                </span>
+                <span id="dellcr-status" class="flex items-center gap-1">
+                    <span class="w-2 h-2 rounded-full bg-gray-600"></span>
+                    <span class="text-gray-400">Dell CR ({{ dellcr_mode }})</span>
+                </span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main content -->
+    <main class="max-w-7xl mx-auto px-4 py-6">
+        {% block content %}{% endblock %}
+    </main>
+
+    <script src="/static/js/app.js"></script>
+</body>
+</html>

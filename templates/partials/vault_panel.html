@@ -1,0 +1,89 @@
+<!-- Dell CR vault state with air gap animation -->
+<div class="p-5 rounded-xl border border-gray-800 bg-gray-900/50 backdrop-blur-sm h-full">
+    <div class="flex items-center justify-between mb-4">
+        <h3 class="text-sm font-semibold text-gray-400 uppercase tracking-wider">Dell Cyber Recovery Vault</h3>
+        <span class="text-xs px-2 py-0.5 rounded-full"
+              :class="{
+                  'bg-gray-800 text-gray-500': vaultState === 'IDLE',
+                  'bg-indigo-500/20 text-indigo-400': vaultState === 'LOCKED',
+                  'bg-amber-500/20 text-amber-400': vaultState === 'SYNCING',
+                  'bg-cyan-500/20 text-cyan-400': vaultState === 'ANALYZING',
+                  'bg-red-500/20 text-red-400': vaultState === 'CORRUPTED',
+                  'bg-blue-500/20 text-blue-400': vaultState === 'RECOVERING',
+                  'bg-emerald-500/20 text-emerald-400': vaultState === 'RECOVERED',
+              }"
+              x-text="vaultState">
+        </span>
+    </div>
+
+    <!-- Air Gap Visualization -->
+    <div class="flex items-center justify-center gap-2 my-6">
+        <!-- Production side -->
+        <div class="w-24 h-16 rounded-lg border flex flex-col items-center justify-center text-xs transition-all"
+             :class="vaultState === 'SYNCING' ? 'border-amber-500 bg-amber-500/10' : 'border-gray-700 bg-gray-800/50'">
+            <span class="font-bold text-gray-300">Production</span>
+            <span class="text-gray-500">Network</span>
+        </div>
+
+        <!-- Air gap -->
+        <div class="relative w-20 h-1 mx-1">
+            <!-- Gap line -->
+            <div class="absolute inset-0 rounded-full transition-all duration-1000"
+                 :class="{
+                     'bg-gray-700': vaultState !== 'SYNCING',
+                     'bg-amber-500 shadow-lg shadow-amber-500/50': vaultState === 'SYNCING',
+                 }">
+            </div>
+            <!-- Data flow animation -->
+            <div x-show="vaultState === 'SYNCING'"
+                 class="absolute inset-0 rounded-full bg-gradient-to-r from-transparent via-amber-400 to-transparent animate-flow">
+            </div>
+            <!-- Gap status label -->
+            <div class="absolute -bottom-5 inset-x-0 text-center">
+                <span class="text-[10px] font-bold uppercase"
+                      :class="{
+                          'text-red-400': vaultState !== 'SYNCING' && vaultState !== 'IDLE',
+                          'text-amber-400': vaultState === 'SYNCING',
+                          'text-gray-600': vaultState === 'IDLE',
+                      }"
+                      x-text="vaultState === 'SYNCING' ? 'OPEN' : 'CLOSED'">
+                </span>
+            </div>
+        </div>
+
+        <!-- Vault side -->
+        <div class="w-24 h-16 rounded-lg border flex flex-col items-center justify-center text-xs transition-all"
+             :class="{
+                 'border-gray-700 bg-gray-800/50': vaultState === 'IDLE',
+                 'border-indigo-500 bg-indigo-500/10': vaultState === 'LOCKED',
+                 'border-amber-500 bg-amber-500/10': vaultState === 'SYNCING',
+                 'border-cyan-500 bg-cyan-500/10': vaultState === 'ANALYZING',
+                 'border-red-500 bg-red-500/10': vaultState === 'CORRUPTED',
+                 'border-blue-500 bg-blue-500/10': vaultState === 'RECOVERING',
+                 'border-emerald-500 bg-emerald-500/10': vaultState === 'RECOVERED',
+             }">
+            <span class="font-bold text-gray-300">Cyber</span>
+            <span class="text-gray-500">Vault</span>
+        </div>
+    </div>
+
+    <!-- Vault details -->
+    <div class="space-y-2 text-xs mt-10">
+        <div class="flex justify-between">
+            <span class="text-gray-500">Vault Name</span>
+            <span class="text-gray-300">PharmaProd-CyberVault</span>
+        </div>
+        <div class="flex justify-between">
+            <span class="text-gray-500">Capacity</span>
+            <span class="text-gray-300">12.4 / 50 TB</span>
+        </div>
+        <div class="flex justify-between">
+            <span class="text-gray-500">Policy</span>
+            <span class="text-gray-300">PharmaProd-Daily-Replication</span>
+        </div>
+        <div class="flex justify-between">
+            <span class="text-gray-500">PIT Copies</span>
+            <span class="text-gray-300">30 (retained)</span>
+        </div>
+    </div>
+</div>
