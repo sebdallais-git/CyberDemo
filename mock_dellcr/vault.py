@@ -28,9 +28,9 @@ class VaultStateMachine:
 
     def __init__(self):
         self.state = VaultState.LOCKED
-        self.sync_duration = 3.0   # seconds (real: minutes)
-        self.analyze_duration = 5.0
-        self.recovery_duration = 4.0
+        self.sync_duration = 7.0    # seconds (real: minutes) — gives presenter time on infra page
+        self.analyze_duration = 8.0  # CyberSense scan — runs while presenter does kill chain
+        self.recovery_duration = 10.0  # slow bar fill for dramatic effect on dashboard
         self.last_transition: Optional[str] = None
         self._progress: float = 0.0  # 0.0 to 1.0 for current operation
 

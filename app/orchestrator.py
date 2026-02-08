@@ -117,6 +117,9 @@ async def run_scenario(scenario_type: ScenarioType) -> AsyncGenerator[str, None]
                    {"category": details["category"], "priority": details["priority"],
                     "source": "fallback"})
 
+    # Narrative beat — let presenter narrate Snowflake results
+    await asyncio.sleep(4.0)
+
     # ── Step 2: INCIDENT ────────────────────────────────────────────
     yield _sse(2, "INCIDENT", StepStatus.RUNNING, "Creating ServiceNow Security Incident...")
     try:
@@ -151,6 +154,9 @@ async def run_scenario(scenario_type: ScenarioType) -> AsyncGenerator[str, None]
         yield _sse(2, "INCIDENT", StepStatus.COMPLETE,
                    f"ServiceNow incident {incident_number} created (MOCK - SN unavailable)",
                    {"number": incident_number, "mode": "mock", "error": str(e)})
+
+    # Narrative beat — let presenter see incident card, navigate to infra
+    await asyncio.sleep(3.0)
 
     # ── Step 3: VAULT SYNC ──────────────────────────────────────────
     yield _sse(3, "VAULT SYNC", StepStatus.RUNNING,
@@ -203,7 +209,7 @@ async def run_scenario(scenario_type: ScenarioType) -> AsyncGenerator[str, None]
 
     # ── Step 5: FORENSICS ───────────────────────────────────────────
     yield _sse(5, "FORENSICS", StepStatus.RUNNING, "Extracting forensic data...")
-    await asyncio.sleep(2.0)
+    await asyncio.sleep(5.0)
 
     corrupted = analysis_data.get("corrupted_files", [])
     classification = analysis_data.get("attack_classification", {})
@@ -258,6 +264,9 @@ async def run_scenario(scenario_type: ScenarioType) -> AsyncGenerator[str, None]
         except Exception as e:
             logger.error(f"ServiceNow work note error: {e}")
 
+    # Narrative beat — presenter returns to dashboard, sees CyberSense report
+    await asyncio.sleep(3.0)
+
     # ── Step 6: RECOVER ─────────────────────────────────────────────
     yield _sse(6, "RECOVER", StepStatus.RUNNING,
                f"Restoring from clean PIT copy {pit_id}...")
@@ -273,6 +282,9 @@ async def run_scenario(scenario_type: ScenarioType) -> AsyncGenerator[str, None]
         yield _sse(6, "RECOVER", StepStatus.COMPLETE,
                    "Recovery complete: 1704 files restored (simulated)",
                    {"pit_id": pit_id, "restored_files": 1704})
+
+    # Narrative beat — let recovery completion register
+    await asyncio.sleep(2.0)
 
     # ── Step 7: RESOLVE ─────────────────────────────────────────────
     yield _sse(7, "RESOLVE", StepStatus.RUNNING,
