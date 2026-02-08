@@ -286,7 +286,7 @@ graph LR
 
 ---
 
-## Infrastructure Map
+## IT/OT Infrastructure
 
 CyberDemo includes an **interactive infrastructure diagram** showing the complete BaselPharma OT/IT stack built on Dell Technologies.
 
