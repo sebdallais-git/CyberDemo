@@ -5,11 +5,22 @@ and ML anomaly scores to detect threats in real time.
 """
 
 import logging
+from pathlib import Path
 from typing import Any
 
 import snowflake.connector
 
 from app.config import settings
+
+# Directory containing per-scenario SQL data files
+SCRIPTS_DIR = Path(__file__).resolve().parent.parent / "scripts"
+
+# Map scenario name → SQL file with INSERT statements
+SCENARIO_SQL_FILES = {
+    "ransomware": "snowflake_ransomware.sql",
+    "ai_factory": "snowflake_ai_factory.sql",
+    "data_exfil": "snowflake_data_exfil.sql",
+}
 
 logger = logging.getLogger(__name__)
 
@@ -98,6 +109,54 @@ class SnowflakeClient:
             conn.close()
             return True
         except Exception:
+            return False
+
+    async def swap_scenario_data(self, scenario: str) -> bool:
+        """Replace SIEM table contents with scenario-specific data.
+
+        TRUNCATEs all 3 tables then runs the scenario's SQL INSERT file.
+        Called at the start of Step 1 (DETECT) so queries return relevant hosts.
+        """
+        sql_file_name = SCENARIO_SQL_FILES.get(scenario)
+        if not sql_file_name:
+            logger.warning(f"No Snowflake data file for scenario '{scenario}', skipping swap")
+            return False
+
+        sql_path = SCRIPTS_DIR / sql_file_name
+        if not sql_path.exists():
+            logger.warning(f"SQL file not found: {sql_path}")
+            return False
+
+        try:
+            conn = self._connect()
+            cur = conn.cursor()
+
+            # Wipe existing data so each scenario starts clean
+            for table in ("ANOMALY_SCORES", "ENDPOINT_EVENTS", "NETWORK_EVENTS"):
+                cur.execute(f"TRUNCATE TABLE IF EXISTS {table}")
+
+            # Execute the scenario's INSERT statements
+            sql_text = sql_path.read_text()
+            statements = [s.strip() for s in sql_text.split(";") if s.strip()]
+            executed = 0
+            for stmt in statements:
+                # Skip pure comments and USE statements (already connected to DB/schema)
+                lines = [l for l in stmt.splitlines() if not l.strip().startswith("--")]
+                meaningful = [l for l in lines if l.strip()]
+                if not meaningful:
+                    continue
+                first_keyword = meaningful[0].strip().split()[0].upper()
+                if first_keyword in ("USE",):
+                    continue
+                cur.execute(stmt)
+                executed += 1
+
+            conn.close()
+            logger.info(f"Snowflake data swapped to '{scenario}' ({executed} statements)")
+            return True
+
+        except Exception as e:
+            logger.error(f"Snowflake data swap error: {e}")
             return False
 
     async def run_anomaly_detection(self) -> dict:

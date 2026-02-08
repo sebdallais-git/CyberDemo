@@ -9,7 +9,7 @@ import asyncio
 import json
 import logging
 from datetime import datetime
-from typing import AsyncGenerator
+from typing import AsyncGenerator, Optional
 
 from app.config import settings
 from app.dellcr_client import dellcr_client
@@ -18,6 +18,15 @@ from app.servicenow_client import snow_client
 from app.snowflake_client import snowflake_client
 
 logger = logging.getLogger(__name__)
+
+# Shared pause gate — the orchestrator waits here after step 2
+# until the presenter clicks "Continue" in the UI.
+_resume_event: Optional[asyncio.Event] = None
+
+
+def get_resume_event() -> Optional[asyncio.Event]:
+    """Return the current resume event (if a scenario is paused)."""
+    return _resume_event
 
 # Pharma scenario definitions (reused from PharmaOpsAgent concept)
 SCENARIO_DETAILS = {
@@ -83,6 +92,7 @@ async def run_scenario(scenario_type: ScenarioType) -> AsyncGenerator[str, None]
     details = SCENARIO_DETAILS[scenario_type]
     incident_sys_id = None
     incident_number = "MOCK-INC-001"
+    incident_url = ""
     analysis_data = {}
     pit_id = "pit-2025-0207-0200"
 
@@ -91,6 +101,8 @@ async def run_scenario(scenario_type: ScenarioType) -> AsyncGenerator[str, None]
     yield _sse(1, "DETECT", StepStatus.RUNNING,
                "Snowflake AI scanning SIEM telemetry — querying anomaly models...")
     try:
+        # Swap in scenario-specific SIEM data before querying
+        await snowflake_client.swap_scenario_data(scenario_type.value)
         snowflake_data = await snowflake_client.run_anomaly_detection()
         max_score = snowflake_data.get("max_threat_score", 0)
         threat_count = snowflake_data.get("threat_count", 0)
@@ -155,8 +167,16 @@ async def run_scenario(scenario_type: ScenarioType) -> AsyncGenerator[str, None]
                    f"ServiceNow incident {incident_number} created (MOCK - SN unavailable)",
                    {"number": incident_number, "mode": "mock", "error": str(e)})
 
-    # Narrative beat — let presenter see incident card, navigate to infra
-    await asyncio.sleep(3.0)
+    # ── PAUSE — let presenter open ServiceNow and inspect the incident ──
+    # Emit a PAUSE event so the frontend shows the "View Incident" button.
+    # The orchestrator blocks here until the presenter clicks "Continue".
+    global _resume_event
+    _resume_event = asyncio.Event()
+    yield _sse(2, "PAUSE", StepStatus.COMPLETE,
+               "Paused — review incident in ServiceNow, then continue",
+               {"incident_url": incident_url, "number": incident_number})
+    await _resume_event.wait()
+    _resume_event = None
 
     # ── Step 3: VAULT SYNC ──────────────────────────────────────────
     yield _sse(3, "VAULT SYNC", StepStatus.RUNNING,
