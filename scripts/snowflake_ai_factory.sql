@@ -4,9 +4,6 @@
 -- Adds AI Factory infrastructure hosts to the CYBER_SECURITY
 -- SIEM tables so the AI Factory scenario shows GPU/MLOps hosts
 -- instead of SCADA hosts in the Snowflake detection panel.
---
--- Run this AFTER the base SIEM data is loaded:
---   snowsql -a <account> -u <user> -d CYBER_SECURITY -s SIEM -f scripts/snowflake_ai_factory.sql
 -- ============================================================
 
 USE DATABASE CYBER_SECURITY;
@@ -14,8 +11,8 @@ USE SCHEMA SIEM;
 
 -- ── ANOMALY_SCORES: AI Factory hosts ────────────────────────
 
-INSERT INTO ANOMALY_SCORES (entity_name, entity_ip, current_score, baseline_score, anomaly_label, contributing_factors, model_version, scored_at)
-SELECT 'GPU-TRAIN-01', '10.30.1.10', 9.92, 1.2, 'CRITICAL_ANOMALY',
+INSERT INTO ANOMALY_SCORES (score_id, entity_type, entity_name, entity_ip, current_score, baseline_score, anomaly_delta, anomaly_label, contributing_factors, model_version, computed_at)
+SELECT 'AS-AI-001', 'HOST', 'GPU-TRAIN-01', '10.30.1.10', 9.92, 1.2, 8.72, 'CRITICAL_ANOMALY',
        PARSE_JSON('{
            "encryption_activity": "EXTREME",
            "wiper_payload_detected": true,
@@ -27,8 +24,8 @@ SELECT 'GPU-TRAIN-01', '10.30.1.10', 9.92, 1.2, 'CRITICAL_ANOMALY',
        'sf-anomaly-v3.2', CURRENT_TIMESTAMP()
 WHERE NOT EXISTS (SELECT 1 FROM ANOMALY_SCORES WHERE entity_name = 'GPU-TRAIN-01');
 
-INSERT INTO ANOMALY_SCORES (entity_name, entity_ip, current_score, baseline_score, anomaly_label, contributing_factors, model_version, scored_at)
-SELECT 'MLOPS-01', '10.30.3.10', 8.7, 1.5, 'CRITICAL_ANOMALY',
+INSERT INTO ANOMALY_SCORES (score_id, entity_type, entity_name, entity_ip, current_score, baseline_score, anomaly_delta, anomaly_label, contributing_factors, model_version, computed_at)
+SELECT 'AS-AI-002', 'HOST', 'MLOPS-01', '10.30.3.10', 8.7, 1.5, 7.2, 'CRITICAL_ANOMALY',
        PARSE_JSON('{
            "service_principal_abuse": true,
            "unity_catalog_bulk_export": "14000 calls in 3 min",
@@ -39,8 +36,8 @@ SELECT 'MLOPS-01', '10.30.3.10', 8.7, 1.5, 'CRITICAL_ANOMALY',
        'sf-anomaly-v3.2', CURRENT_TIMESTAMP()
 WHERE NOT EXISTS (SELECT 1 FROM ANOMALY_SCORES WHERE entity_name = 'MLOPS-01');
 
-INSERT INTO ANOMALY_SCORES (entity_name, entity_ip, current_score, baseline_score, anomaly_label, contributing_factors, model_version, scored_at)
-SELECT 'AI-DATA-01', '10.30.2.10', 7.8, 1.1, 'HIGH_ANOMALY',
+INSERT INTO ANOMALY_SCORES (score_id, entity_type, entity_name, entity_ip, current_score, baseline_score, anomaly_delta, anomaly_label, contributing_factors, model_version, computed_at)
+SELECT 'AS-AI-003', 'HOST', 'AI-DATA-01', '10.30.2.10', 7.8, 1.1, 6.7, 'HIGH_ANOMALY',
        PARSE_JSON('{
            "lateral_movement_indicator": true,
            "smb_encryption_spray": "PowerScale /ai-data/training/*",
@@ -50,8 +47,8 @@ SELECT 'AI-DATA-01', '10.30.2.10', 7.8, 1.1, 'HIGH_ANOMALY',
        'sf-anomaly-v3.2', CURRENT_TIMESTAMP()
 WHERE NOT EXISTS (SELECT 1 FROM ANOMALY_SCORES WHERE entity_name = 'AI-DATA-01');
 
-INSERT INTO ANOMALY_SCORES (entity_name, entity_ip, current_score, baseline_score, anomaly_label, contributing_factors, model_version, scored_at)
-SELECT 'GPU-INF-01', '10.30.1.20', 6.1, 1.3, 'HIGH_ANOMALY',
+INSERT INTO ANOMALY_SCORES (score_id, entity_type, entity_name, entity_ip, current_score, baseline_score, anomaly_delta, anomaly_label, contributing_factors, model_version, computed_at)
+SELECT 'AS-AI-004', 'HOST', 'GPU-INF-01', '10.30.1.20', 6.1, 1.3, 4.8, 'HIGH_ANOMALY',
        PARSE_JSON('{
            "lateral_movement_indicator": true,
            "model_serving_disrupted": true,
@@ -77,7 +74,7 @@ VALUES
 
 -- ── NETWORK_EVENTS: AI Factory traffic ──────────────────────
 
-INSERT INTO NETWORK_EVENTS (event_id, source_host, source_ip, dest_ip, dest_port, protocol, bytes_sent, bytes_recv, geo_country, event_time)
+INSERT INTO NETWORK_EVENTS (event_id, source_host, source_ip, dest_ip, dest_port, protocol, bytes_sent, bytes_received, geo_country, event_time)
 VALUES
     -- GPU-TRAIN-01: C2 callbacks to APT41 infrastructure
     ('NET-AI-001', 'GPU-TRAIN-01', '10.30.1.10', '91.234.99.42', 8443, 'TCP', 245000, 18000, 'CN', CURRENT_TIMESTAMP()),
@@ -95,7 +92,7 @@ VALUES
     ('NET-AI-009', 'MLOPS-01', '10.30.3.10', '91.234.99.44', 8443, 'TCP', 890000, 12000, 'CN', CURRENT_TIMESTAMP()),
     -- AI-DATA-01: receiving encrypted payloads from GPU-TRAIN-01
     ('NET-AI-010', 'AI-DATA-01', '10.30.2.10', '10.30.1.10', 2049, 'NFS', 128000, 2100000000, 'CH', CURRENT_TIMESTAMP()),
-    -- Additional SMB lateral movement patterns
+    -- Additional SMB lateral movement patterns (GPU-TRAIN-01 encrypting PowerScale)
     ('NET-AI-011', 'GPU-TRAIN-01', '10.30.1.10', '10.30.2.10', 445, 'SMB', 750000000, 1024, 'CH', CURRENT_TIMESTAMP()),
     ('NET-AI-012', 'GPU-TRAIN-01', '10.30.1.10', '10.30.2.10', 445, 'SMB', 620000000, 512, 'CH', CURRENT_TIMESTAMP()),
     ('NET-AI-013', 'GPU-TRAIN-01', '10.30.1.10', '10.30.2.10', 445, 'SMB', 530000000, 256, 'CH', CURRENT_TIMESTAMP()),
@@ -103,6 +100,7 @@ VALUES
     ('NET-AI-015', 'GPU-TRAIN-01', '10.30.1.10', '10.30.2.10', 445, 'SMB', 380000000, 256, 'CH', CURRENT_TIMESTAMP()),
     ('NET-AI-016', 'GPU-TRAIN-01', '10.30.1.10', '10.30.2.10', 445, 'SMB', 290000000, 128, 'CH', CURRENT_TIMESTAMP()),
     ('NET-AI-017', 'GPU-TRAIN-01', '10.30.1.10', '10.30.2.10', 445, 'SMB', 210000000, 256, 'CH', CURRENT_TIMESTAMP()),
+    -- GPU-TRAIN-01 lateral to inference
     ('NET-AI-018', 'GPU-TRAIN-01', '10.30.1.10', '10.30.1.20', 445, 'SMB', 320000, 128, 'CH', CURRENT_TIMESTAMP()),
     ('NET-AI-019', 'GPU-TRAIN-01', '10.30.1.10', '10.30.1.20', 445, 'SMB', 280000, 256, 'CH', CURRENT_TIMESTAMP()),
     ('NET-AI-020', 'GPU-TRAIN-01', '10.30.1.10', '10.30.1.20', 445, 'SMB', 190000, 128, 'CH', CURRENT_TIMESTAMP());
