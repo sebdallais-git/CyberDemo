@@ -62,10 +62,16 @@
         </div>
     </section>
 
+    <!-- Attack Events Feed (cascades during DETECT phase) -->
+    <section x-show="attackEvents.length > 0" x-transition class="mb-8">
+        {% include "partials/attack_feed.html" %}
+    </section>
+
     <!-- Live Timeline -->
     <section class="mb-8">
         {% include "partials/timeline.html" %}
     </section>
+
 
     <!-- Snowflake Detection Panel (appears after step 1 completes with Snowflake data) -->
     <section x-show="snowflakeDetection.threats && snowflakeDetection.threats.length > 0" x-transition class="mb-8">

@@ -183,7 +183,19 @@
             font-size: 8px; padding: 2px 6px; border-radius: 4px;
             font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; flex-shrink: 0;
         }
-        .badge-dell { background: rgba(0,125,184,0.12); color: #0ea5e9; border: 1px solid rgba(0,125,184,0.25); }
+        .badge-dell {
+            background: rgba(0,125,184,0.12);
+            border: 1px solid rgba(0,125,184,0.25);
+            font-size: 0; padding: 3px 5px; line-height: 0;
+            display: inline-flex; align-items: center; justify-content: center;
+        }
+        .badge-dell::before {
+            content: '';
+            display: block;
+            width: 32px;
+            height: 12px;
+            background: url("/static/img/dell-logo.svg") no-repeat center/contain;
+        }
         .badge-sw   { background: rgba(168,85,247,0.12); color: #c084fc; border: 1px solid rgba(168,85,247,0.25); }
         .badge-nv   { background: rgba(118,185,0,0.12); color: #76b900; border: 1px solid rgba(118,185,0,0.25); }
 
@@ -308,20 +320,77 @@
             box-shadow: 0 0 12px rgba(34,197,94,0.12);
         }
 
+        /* Recovering — cyan pulse (Dell CR restoring) */
+        body.attack-active .product[data-attack="recovering"] {
+            border-color: rgba(6,182,212,0.6) !important;
+            animation: recovering-pulse 1.5s ease-in-out infinite;
+        }
+        @keyframes recovering-pulse {
+            0%, 100% { box-shadow: 0 0 15px rgba(6,182,212,0.15), inset 0 0 15px rgba(6,182,212,0.03); }
+            50%      { box-shadow: 0 0 30px rgba(6,182,212,0.4), inset 0 0 20px rgba(6,182,212,0.08); }
+        }
+
+        /* Restored — solid green glow */
+        body.attack-active .product[data-attack="restored"] {
+            border-color: rgba(34,197,94,0.5) !important;
+            box-shadow: 0 0 18px rgba(34,197,94,0.2), inset 0 0 15px rgba(34,197,94,0.04);
+        }
+
         .attack-label {
             display: none; align-items: center; gap: 5px; margin-top: 8px;
             padding: 4px 8px; border-radius: 5px; font-size: 9px;
             font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; line-height: 1;
         }
         .attack-label .al-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
-        body.attack-active .attack-label { display: flex; }
+        /* Label only shows when the individual card has been activated */
+        .product[data-attack] .attack-label { display: flex; }
         .attack-label.al-red { background: rgba(239,68,68,0.1); color: #f87171; border: 1px solid rgba(239,68,68,0.25); }
         .attack-label.al-red .al-dot { background: #ef4444; box-shadow: 0 0 6px rgba(239,68,68,0.6); animation: dot-blink 1s infinite; }
         .attack-label.al-amber { background: rgba(245,158,11,0.1); color: #fbbf24; border: 1px solid rgba(245,158,11,0.25); }
         .attack-label.al-amber .al-dot { background: #f59e0b; box-shadow: 0 0 6px rgba(245,158,11,0.6); }
         .attack-label.al-green { background: rgba(34,197,94,0.1); color: #4ade80; border: 1px solid rgba(34,197,94,0.2); }
         .attack-label.al-green .al-dot { background: #22c55e; box-shadow: 0 0 6px rgba(34,197,94,0.5); }
+        .attack-label.al-cyan { background: rgba(6,182,212,0.1); color: #22d3ee; border: 1px solid rgba(6,182,212,0.25); }
+        .attack-label.al-cyan .al-dot { background: #06b6d4; box-shadow: 0 0 6px rgba(6,182,212,0.6); animation: dot-blink 1s infinite; }
         @keyframes dot-blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+        /* Air gap OPEN state — data flowing (cyan) */
+        .air-gap.gap-open .air-gap-inner {
+            border-color: rgba(6,182,212,0.6);
+            animation: gap-open-pulse 1.5s ease-in-out infinite;
+            background: repeating-linear-gradient(0deg, transparent 0px, transparent 10px, rgba(6,182,212,0.04) 10px, rgba(6,182,212,0.04) 11px);
+        }
+        @keyframes gap-open-pulse {
+            0%, 100% { border-color: rgba(6,182,212,0.4); box-shadow: inset 0 0 30px rgba(6,182,212,0.05); }
+            50%      { border-color: rgba(6,182,212,0.8); box-shadow: inset 0 0 40px rgba(6,182,212,0.12); }
+        }
+        .air-gap.gap-open .gap-lock { border-color: rgba(6,182,212,0.6); animation: lock-open-glow 1.5s ease-in-out infinite; }
+        @keyframes lock-open-glow {
+            0%, 100% { box-shadow: 0 0 10px rgba(6,182,212,0.2); }
+            50%      { box-shadow: 0 0 25px rgba(6,182,212,0.5); }
+        }
+        .air-gap.gap-open .gap-label { color: #06b6d4; }
+        .air-gap.gap-open .gap-proto { color: rgba(6,182,212,0.6); }
+        .air-gap.gap-open .lock-closed { display: none; }
+        .air-gap.gap-open .lock-open { display: block !important; }
+
+        /* Air gap SEALED state — recovery complete (green) */
+        .air-gap.gap-sealed .air-gap-inner {
+            border-color: rgba(34,197,94,0.5);
+            animation: gap-sealed-pulse 2s ease-in-out infinite;
+            background: repeating-linear-gradient(0deg, transparent 0px, transparent 10px, rgba(34,197,94,0.03) 10px, rgba(34,197,94,0.03) 11px);
+        }
+        @keyframes gap-sealed-pulse {
+            0%, 100% { border-color: rgba(34,197,94,0.35); box-shadow: inset 0 0 30px rgba(34,197,94,0.04); }
+            50%      { border-color: rgba(34,197,94,0.6); box-shadow: inset 0 0 40px rgba(34,197,94,0.1); }
+        }
+        .air-gap.gap-sealed .gap-lock { border-color: rgba(34,197,94,0.5); animation: lock-sealed-glow 2s ease-in-out infinite; }
+        @keyframes lock-sealed-glow {
+            0%, 100% { box-shadow: 0 0 10px rgba(34,197,94,0.15); }
+            50%      { box-shadow: 0 0 20px rgba(34,197,94,0.4); }
+        }
+        .air-gap.gap-sealed .gap-label { color: #22c55e; }
+        .air-gap.gap-sealed .gap-proto { color: rgba(34,197,94,0.5); }
 
         body.attack-active .hdr-pipeline .meta-dot { background: #ef4444 !important; box-shadow: 0 0 6px rgba(239,68,68,0.6) !important; }
         body.attack-active .hdr-pipeline span:last-child { color: #f87171 !important; }
@@ -716,13 +785,17 @@
     <!-- ============================== -->
     <!-- AIR GAP                        -->
     <!-- ============================== -->
-    <div class="air-gap">
+    <div class="air-gap" id="air-gap">
         <div class="air-gap-inner">
             <div class="gap-label">Air Gap</div>
             <div class="gap-lock">
-                <svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round">
+                <svg class="lock-closed" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round">
                     <rect x="5" y="11" width="14" height="11" rx="2"/>
                     <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                </svg>
+                <svg class="lock-open" viewBox="0 0 24 24" fill="none" stroke="#06b6d4" stroke-width="2" stroke-linecap="round" style="display:none">
+                    <rect x="5" y="11" width="14" height="11" rx="2"/>
+                    <path d="M7 11V7a5 5 0 1 1 10 0"/>
                 </svg>
             </div>
             <div class="gap-proto">DD MTree<br/>Repl.</div>
@@ -839,48 +912,170 @@
 
 <script>
 (function() {
+    // ── Attack state — maps product model text → attack level, label, cascade order ──
+    // Order follows the APT kill chain: credential theft → data layer → compute → MLOps
     const ATTACK_MAP = {
-        'AI-DATA-01':         { level: 'compromised', label: '2.1 TB Training Data Encrypted in 47s', color: 'red' },
-        'Data Governance':    { level: 'compromised', label: 'Service Principal Stolen — Bulk Export', color: 'red' },
-        'S3-Compatible':      { level: 'at-risk',     label: 'Delta Lake Tables at Risk', color: 'amber' },
-        'GPU-TRAIN-01':       { level: 'at-risk',     label: 'Simulation Results Wiped — Wiper Payload', color: 'amber' },
-        'GPU-INF-01':         { level: 'at-risk',     label: 'Model Serving Disrupted', color: 'amber' },
-        'Experiment Tracking': { level: 'compromised', label: '2,847 Experiments Encrypted — 18mo Lost', color: 'red' },
-        'R&D Notebooks':      { level: 'compromised', label: 'Notebooks + Scheduled Jobs Destroyed', color: 'red' },
-        'CR 19.22':           { level: 'protected',   label: 'Air-Gapped — No Network Path', color: 'green' },
-        'ML Analytics':       { level: 'protected',   label: 'Ready to Scan Vault Copy', color: 'green' },
-        'Data Domain — Vault': { level: 'protected',  label: 'Retention-Locked — Immutable Copy', color: 'green' },
+        'Data Governance':     { level: 'compromised', label: 'Service Principal Stolen — Bulk Export',    color: 'red',   order: 1 },
+        'AI-DATA-01':          { level: 'compromised', label: '2.1 TB Training Data Encrypted in 47s',    color: 'red',   order: 2 },
+        'S3-Compatible':       { level: 'at-risk',     label: 'Delta Lake Tables at Risk',                 color: 'amber', order: 3 },
+        'GPU-TRAIN-01':        { level: 'at-risk',     label: 'Simulation Results Wiped — Wiper Payload',  color: 'amber', order: 4 },
+        'GPU-INF-01':          { level: 'at-risk',     label: 'Model Serving Disrupted',                   color: 'amber', order: 5 },
+        'Experiment Tracking': { level: 'compromised', label: '2,847 Experiments Encrypted — 18mo Lost',   color: 'red',   order: 6 },
+        'R&D Notebooks':       { level: 'compromised', label: 'Notebooks + Scheduled Jobs Destroyed',      color: 'red',   order: 7 },
+        'CR 19.22':            { level: 'protected',   label: 'Air-Gapped — No Network Path',              color: 'green', order: 8 },
+        'ML Analytics':        { level: 'protected',   label: 'Ready to Scan Vault Copy',                  color: 'green', order: 9 },
+        'Data Domain — Vault': { level: 'protected',   label: 'Retention-Locked — Immutable Copy',         color: 'green', order: 10 },
     };
+
+    // Recovery sequence — follows Dell Cyber Recovery workflow for AI Factory:
+    // 1. Vault opens air gap, CyberSense scans, clean PIT identified
+    // 2. Data restored back: vault → protection → MLOps → compute → data lake
+    const RECOVERY_SEQUENCE = [
+        { key: 'CR 19.22',            state: 'recovering', label: 'Air Gap Opened — Vault Sync Initiated',                   color: 'cyan' },
+        { key: 'ML Analytics',        state: 'recovering', label: 'CyberSense Scanning — 99.99% Corruption Detected',        color: 'cyan' },
+        { key: 'Data Domain — Vault', state: 'recovering', label: 'Clean PIT Identified — pit-2025-0207-0200',               color: 'cyan' },
+        { key: 'Experiment Tracking', state: 'recovering', label: 'MLflow Artifacts Restoring — 2,847 Experiments',           color: 'cyan' },
+        { key: 'R&D Notebooks',       state: 'recovering', label: 'Notebooks + Jobs Restoring from Vault Copy',              color: 'cyan' },
+        { key: 'GPU-TRAIN-01',        state: 'recovering', label: 'Training Cluster Reprovisioned — Jobs Requeued',          color: 'cyan' },
+        { key: 'GPU-INF-01',          state: 'recovering', label: 'Inference Endpoints Redeployed',                          color: 'cyan' },
+        { key: 'AI-DATA-01',          state: 'recovering', label: 'Training Data Restoring from Vault — 480 TB',             color: 'cyan' },
+        { key: 'S3-Compatible',       state: 'recovering', label: 'Delta Lake Tables Rebuilding from Clean Copy',            color: 'cyan' },
+        { key: 'Data Governance',     state: 'recovering', label: 'Service Principal Rotated — ACLs Re-applied',             color: 'cyan' },
+        // Final phase: everything restored
+        { key: 'CR 19.22',            state: 'restored',   label: 'Air Gap Sealed — Vault Locked',                           color: 'green' },
+        { key: 'ML Analytics',        state: 'restored',   label: 'Clean Baseline Confirmed — AI Data Verified',             color: 'green' },
+        { key: 'Data Domain — Vault', state: 'restored',   label: 'Retention Lock Re-engaged',                               color: 'green' },
+        { key: 'Experiment Tracking', state: 'restored',   label: 'All Experiments Recovered — Lineage Intact',              color: 'green' },
+        { key: 'R&D Notebooks',       state: 'restored',   label: 'Workspace Online — 87 Notebooks Verified',               color: 'green' },
+        { key: 'GPU-TRAIN-01',        state: 'restored',   label: 'GPU Cluster Online — BPX-7721 Training Resumed',         color: 'green' },
+        { key: 'GPU-INF-01',          state: 'restored',   label: 'Model Serving Restored — QSAR Scoring Active',           color: 'green' },
+        { key: 'AI-DATA-01',          state: 'restored',   label: 'Data Lake Verified — GxP Integrity Confirmed',           color: 'green' },
+        { key: 'S3-Compatible',       state: 'restored',   label: 'Delta Tables Online — Checkpoints Valid',                color: 'green' },
+        { key: 'Data Governance',     state: 'restored',   label: 'Unity Catalog Secured — Phase III Pipeline Active',      color: 'green' },
+    ];
+
+    // Collect all tagged product cards
+    const cardsByKey = {};
+    const attackCards = [];
 
     document.querySelectorAll('.p-model').forEach(el => {
         const text = el.textContent;
         for (const [key, config] of Object.entries(ATTACK_MAP)) {
             if (text.includes(key)) {
                 const card = el.closest('.product');
-                card.dataset.attack = config.level;
-                const label = document.createElement('div');
-                label.className = 'attack-label al-' + config.color;
-                label.innerHTML = '<span class="al-dot"></span>' + config.label;
-                card.appendChild(label);
+                card.dataset.attackLevel = config.level;
+                card.dataset.attackOrder = config.order;
+
+                const labelEl = document.createElement('div');
+                labelEl.className = 'attack-label al-' + config.color;
+                labelEl.innerHTML = '<span class="al-dot"></span><span class="al-text">' + config.label + '</span>';
+                card.appendChild(labelEl);
+
+                const entry = { card, labelEl, origLabel: config.label, origColor: config.color, order: config.order };
+                attackCards.push(entry);
+                cardsByKey[key] = entry;
                 break;
             }
         }
     });
 
+    attackCards.sort((a, b) => a.order - b.order);
+
+    const airGap = document.getElementById('air-gap');
+    let cascadeTimers = [];
+    let isRecovering = false;
+
     const toggle = document.getElementById('attack-toggle');
     const toggleText = toggle.querySelector('.toggle-text');
 
-    function setAttackState(active) {
-        document.body.classList.toggle('attack-active', active);
-        toggleText.textContent = active ? 'Clear Attack' : 'Simulate Attack';
+    function setAirGapState(state) {
+        airGap.classList.remove('gap-open', 'gap-sealed');
+        if (state === 'open') airGap.classList.add('gap-open');
+        else if (state === 'sealed') airGap.classList.add('gap-sealed');
+    }
+
+    function setLabel(entry, text, color) {
+        entry.labelEl.querySelector('.al-text').textContent = text;
+        entry.labelEl.className = entry.labelEl.className.replace(/al-(red|amber|green|cyan)/g, '');
+        entry.labelEl.classList.add('al-' + color);
+    }
+
+    function startAttackCascade() {
+        cascadeTimers.forEach(t => clearTimeout(t));
+        cascadeTimers = [];
+        isRecovering = false;
+
+        toggleText.textContent = 'Recover';
+        document.body.classList.add('attack-active');
+        setAirGapState('locked');
+
+        attackCards.forEach(entry => {
+            delete entry.card.dataset.attack;
+            setLabel(entry, entry.origLabel, entry.origColor);
+        });
+
+        attackCards.forEach((entry, i) => {
+            const timer = setTimeout(() => {
+                entry.card.dataset.attack = entry.card.dataset.attackLevel;
+            }, i * 900);
+            cascadeTimers.push(timer);
+        });
+    }
+
+    function startRecoveryCascade() {
+        cascadeTimers.forEach(t => clearTimeout(t));
+        cascadeTimers = [];
+        isRecovering = true;
+
+        toggleText.textContent = 'Recovering...';
+        toggle.disabled = true;
+
+        const sealIndex = RECOVERY_SEQUENCE.findIndex(s => s.state === 'restored');
+
+        RECOVERY_SEQUENCE.forEach((step, i) => {
+            const entry = cardsByKey[step.key];
+            if (!entry) return;
+
+            const timer = setTimeout(() => {
+                if (i === 0) setAirGapState('open');
+                if (i === sealIndex) setAirGapState('sealed');
+                entry.card.dataset.attack = step.state;
+                setLabel(entry, step.label, step.color);
+            }, i * 900);
+            cascadeTimers.push(timer);
+        });
+
+        const finalTimer = setTimeout(() => {
+            attackCards.forEach(entry => {
+                delete entry.card.dataset.attack;
+                setLabel(entry, entry.origLabel, entry.origColor);
+            });
+            setAirGapState('locked');
+            document.body.classList.remove('attack-active');
+            toggleText.textContent = 'Simulate Attack';
+            toggle.disabled = false;
+            isRecovering = false;
+        }, RECOVERY_SEQUENCE.length * 900 + 1500);
+        cascadeTimers.push(finalTimer);
     }
 
     toggle.addEventListener('click', () => {
-        setAttackState(!document.body.classList.contains('attack-active'));
+        if (isRecovering) return;
+        const isActive = document.body.classList.contains('attack-active');
+        if (isActive) {
+            startRecoveryCascade();
+        } else {
+            startAttackCascade();
+        }
     });
 
+    // URL parameter support — show all at once when linked from dashboard
     if (new URLSearchParams(location.search).get('state') === 'attacked') {
-        setAttackState(true);
+        document.body.classList.add('attack-active');
+        attackCards.forEach(entry => {
+            entry.card.dataset.attack = entry.card.dataset.attackLevel;
+        });
+        toggleText.textContent = 'Recover';
     }
 })();
 </script>

@@ -228,8 +228,20 @@
         }
         .badge-dell {
             background: rgba(0,125,184,0.12);
-            color: #0ea5e9;
             border: 1px solid rgba(0,125,184,0.25);
+            font-size: 0;             /* hide text fallback */
+            padding: 3px 5px;
+            line-height: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .badge-dell::before {
+            content: '';
+            display: block;
+            width: 32px;
+            height: 12px;
+            background: url("/static/img/dell-logo.svg") no-repeat center/contain;
         }
         .badge-sw {
             background: rgba(168,85,247,0.12);
@@ -391,6 +403,58 @@
             letter-spacing: 2px;
             writing-mode: vertical-rl;
         }
+        /* Air gap OPEN state — data flowing through (cyan) */
+        .air-gap.gap-open .air-gap-inner {
+            border-color: rgba(6,182,212,0.6);
+            animation: gap-open-pulse 1.5s ease-in-out infinite;
+            background: repeating-linear-gradient(
+                0deg,
+                transparent 0px, transparent 10px,
+                rgba(6,182,212,0.04) 10px, rgba(6,182,212,0.04) 11px
+            );
+        }
+        @keyframes gap-open-pulse {
+            0%, 100% { border-color: rgba(6,182,212,0.4); box-shadow: inset 0 0 30px rgba(6,182,212,0.05); }
+            50%      { border-color: rgba(6,182,212,0.8); box-shadow: inset 0 0 40px rgba(6,182,212,0.12); }
+        }
+        .air-gap.gap-open .gap-lock {
+            border-color: rgba(6,182,212,0.6);
+            animation: lock-open-glow 1.5s ease-in-out infinite;
+        }
+        @keyframes lock-open-glow {
+            0%, 100% { box-shadow: 0 0 10px rgba(6,182,212,0.2); }
+            50%      { box-shadow: 0 0 25px rgba(6,182,212,0.5); }
+        }
+        .air-gap.gap-open .gap-label { color: #06b6d4; }
+        .air-gap.gap-open .gap-proto { color: rgba(6,182,212,0.6); }
+        .air-gap.gap-open .lock-closed { display: none; }
+        .air-gap.gap-open .lock-open { display: block !important; }
+
+        /* Air gap SEALED state — recovery complete (green) */
+        .air-gap.gap-sealed .air-gap-inner {
+            border-color: rgba(34,197,94,0.5);
+            animation: gap-sealed-pulse 2s ease-in-out infinite;
+            background: repeating-linear-gradient(
+                0deg,
+                transparent 0px, transparent 10px,
+                rgba(34,197,94,0.03) 10px, rgba(34,197,94,0.03) 11px
+            );
+        }
+        @keyframes gap-sealed-pulse {
+            0%, 100% { border-color: rgba(34,197,94,0.35); box-shadow: inset 0 0 30px rgba(34,197,94,0.04); }
+            50%      { border-color: rgba(34,197,94,0.6); box-shadow: inset 0 0 40px rgba(34,197,94,0.1); }
+        }
+        .air-gap.gap-sealed .gap-lock {
+            border-color: rgba(34,197,94,0.5);
+            animation: lock-sealed-glow 2s ease-in-out infinite;
+        }
+        @keyframes lock-sealed-glow {
+            0%, 100% { box-shadow: 0 0 10px rgba(34,197,94,0.15); }
+            50%      { box-shadow: 0 0 20px rgba(34,197,94,0.4); }
+        }
+        .air-gap.gap-sealed .gap-label { color: #22c55e; }
+        .air-gap.gap-sealed .gap-proto { color: rgba(34,197,94,0.5); }
+
         .gap-proto {
             font-size: 7px;
             color: rgba(239,68,68,0.5);
@@ -539,6 +603,22 @@
             box-shadow: 0 0 12px rgba(34,197,94,0.12), inset 0 0 12px rgba(34,197,94,0.03);
         }
 
+        /* Recovering product — cyan pulse (Dell CR restoring) */
+        body.attack-active .product[data-attack="recovering"] {
+            border-color: rgba(6,182,212,0.6) !important;
+            animation: recovering-pulse 1.5s ease-in-out infinite;
+        }
+        @keyframes recovering-pulse {
+            0%, 100% { box-shadow: 0 0 15px rgba(6,182,212,0.15), inset 0 0 15px rgba(6,182,212,0.03); }
+            50%      { box-shadow: 0 0 30px rgba(6,182,212,0.4), inset 0 0 20px rgba(6,182,212,0.08); }
+        }
+
+        /* Restored product — solid green glow */
+        body.attack-active .product[data-attack="restored"] {
+            border-color: rgba(34,197,94,0.5) !important;
+            box-shadow: 0 0 18px rgba(34,197,94,0.2), inset 0 0 15px rgba(34,197,94,0.04);
+        }
+
         /* Attack label badge — appears on affected products */
         .attack-label {
             display: none;
@@ -558,7 +638,8 @@
             border-radius: 50%;
             flex-shrink: 0;
         }
-        body.attack-active .attack-label { display: flex; }
+        /* Label only shows when the individual card has been activated */
+        .product[data-attack] .attack-label { display: flex; }
 
         .attack-label.al-red {
             background: rgba(239,68,68,0.1);
@@ -587,6 +668,16 @@
         .attack-label.al-green .al-dot {
             background: #22c55e;
             box-shadow: 0 0 6px rgba(34,197,94,0.5);
+        }
+        .attack-label.al-cyan {
+            background: rgba(6,182,212,0.1);
+            color: #22d3ee;
+            border: 1px solid rgba(6,182,212,0.25);
+        }
+        .attack-label.al-cyan .al-dot {
+            background: #06b6d4;
+            box-shadow: 0 0 6px rgba(6,182,212,0.6);
+            animation: dot-blink 1s infinite;
         }
         @keyframes dot-blink {
             0%, 100% { opacity: 1; }
@@ -1061,13 +1152,19 @@
     <!-- ============================== -->
     <!-- AIR GAP                        -->
     <!-- ============================== -->
-    <div class="air-gap">
+    <div class="air-gap" id="air-gap">
         <div class="air-gap-inner">
             <div class="gap-label">Air Gap</div>
             <div class="gap-lock">
-                <svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round">
+                <!-- Locked padlock (default + sealed state) -->
+                <svg class="lock-closed" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round">
                     <rect x="5" y="11" width="14" height="11" rx="2"/>
                     <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                </svg>
+                <!-- Unlocked padlock (shown when gap is open) -->
+                <svg class="lock-open" viewBox="0 0 24 24" fill="none" stroke="#06b6d4" stroke-width="2" stroke-linecap="round" style="display:none">
+                    <rect x="5" y="11" width="14" height="11" rx="2"/>
+                    <path d="M7 11V7a5 5 0 1 1 10 0"/>
                 </svg>
             </div>
             <div class="gap-proto">DD MTree<br/>Repl.</div>
@@ -1205,17 +1302,48 @@
 <script>
 (function() {
     // ── Attack state configuration ──
-    // Maps product model text → attack level and label
+    // Maps product model text → attack level, label, and cascade order.
+    // order: lower = earlier in the attack chain (propagates left → right across zones).
     const ATTACK_MAP = {
-        'SCADA-HIST-01': { level: 'compromised', label: 'Shadow Copies Deleted — PI Database Encrypted', color: 'red' },
-        'PI Server 2024': { level: 'compromised', label: 'Application Layer Locked — No Tag Access', color: 'red' },
-        'SCADA-HIST-02': { level: 'at-risk', label: 'Encrypted Data Replicating via PI HA Channel', color: 'amber' },
-        'XR4000': { level: 'at-risk', label: 'Initial Access — Phished Credential → C2 185.220.101.x', color: 'amber' },
-        'F710': { level: 'at-risk', label: 'SMB Probing — Archive Shares at Risk', color: 'amber' },
-        'CR 19.22': { level: 'protected', label: 'Air-Gapped — No Network Path', color: 'green' },
-        'ML Analytics': { level: 'protected', label: 'Ready to Scan Vault Copy', color: 'green' },
-        'Data Domain — Vault': { level: 'protected', label: 'Retention-Locked — Immutable Copy', color: 'green' },
+        'XR4000':              { level: 'at-risk',     label: 'Initial Access — Phished Credential → C2 185.220.101.x', color: 'amber', order: 1 },
+        'SCADA-HIST-01':       { level: 'compromised', label: 'Shadow Copies Deleted — PI Database Encrypted',          color: 'red',   order: 2 },
+        'PI Server 2024':      { level: 'compromised', label: 'Application Layer Locked — No Tag Access',               color: 'red',   order: 3 },
+        'SCADA-HIST-02':       { level: 'at-risk',     label: 'Encrypted Data Replicating via PI HA Channel',           color: 'amber', order: 4 },
+        'F710':                { level: 'at-risk',     label: 'SMB Probing — Archive Shares at Risk',                   color: 'amber', order: 5 },
+        'CR 19.22':            { level: 'protected',   label: 'Air-Gapped — No Network Path',                           color: 'green', order: 6 },
+        'ML Analytics':        { level: 'protected',   label: 'Ready to Scan Vault Copy',                               color: 'green', order: 7 },
+        'Data Domain — Vault': { level: 'protected',   label: 'Retention-Locked — Immutable Copy',                      color: 'green', order: 8 },
     };
+
+    // Recovery sequence — follows the Dell Cyber Recovery workflow:
+    // 1. Vault opens air gap and syncs
+    // 2. CyberSense scans and identifies corruption
+    // 3. Clean PIT copy identified in vault DD
+    // 4. Data restored back through infrastructure (vault → IT → DMZ → OT → plant)
+    // 5. Production resumes
+    const RECOVERY_SEQUENCE = [
+        { key: 'CR 19.22',            state: 'recovering', label: 'Air Gap Opened — Vault Sync Initiated',               color: 'cyan' },
+        { key: 'ML Analytics',        state: 'recovering', label: 'CyberSense Scanning — 99.99% Corruption Detected',    color: 'cyan' },
+        { key: 'Data Domain — Vault', state: 'recovering', label: 'Clean PIT Copy Identified — pit-2025-0207-0200',      color: 'cyan' },
+        { key: 'F710',                state: 'recovering', label: 'Restoring Archive Shares from Vault Copy',             color: 'cyan' },
+        { key: 'SCADA-HIST-01',       state: 'recovering', label: 'PI Database Restoring — 1,704 Files from Clean PIT',  color: 'cyan' },
+        { key: 'PI Server 2024',      state: 'recovering', label: 'Application Layer Unlocked — Tag Access Restored',    color: 'cyan' },
+        { key: 'SCADA-HIST-02',       state: 'recovering', label: 'HA Replication Resynchronized from Primary',          color: 'cyan' },
+        { key: 'XR4000',              state: 'recovering', label: 'Credentials Rotated — C2 Channel Blocked',            color: 'cyan' },
+        // Final phase: everything restored
+        { key: 'CR 19.22',            state: 'restored',   label: 'Air Gap Sealed — Vault Locked',                       color: 'green' },
+        { key: 'ML Analytics',        state: 'restored',   label: 'Clean Baseline Confirmed',                            color: 'green' },
+        { key: 'Data Domain — Vault', state: 'restored',   label: 'Retention Lock Re-engaged',                           color: 'green' },
+        { key: 'F710',                state: 'restored',   label: 'Shares Online — Integrity Verified',                  color: 'green' },
+        { key: 'SCADA-HIST-01',       state: 'restored',   label: 'PI Database Verified — GxP Compliant',                color: 'green' },
+        { key: 'PI Server 2024',      state: 'restored',   label: 'All Tags Online — Data Integrity Confirmed',          color: 'green' },
+        { key: 'SCADA-HIST-02',       state: 'restored',   label: 'HA Pair Healthy — Failover Ready',                    color: 'green' },
+        { key: 'XR4000',              state: 'restored',   label: 'Production Lines B1-B4 Resumed',                      color: 'green' },
+    ];
+
+    // Collect all tagged product cards for cascade control
+    const cardsByKey = {};   // key → { card, labelEl, origLabel, origColor }
+    const attackCards = [];
 
     // ── Tag products with attack data ──
     document.querySelectorAll('.p-model').forEach(el => {
@@ -1223,35 +1351,149 @@
         for (const [key, config] of Object.entries(ATTACK_MAP)) {
             if (text.includes(key)) {
                 const card = el.closest('.product');
-                card.dataset.attack = config.level;
+                card.dataset.attackLevel = config.level;
+                card.dataset.attackOrder = config.order;
 
-                // Create attack label element
-                const label = document.createElement('div');
-                label.className = 'attack-label al-' + config.color;
-                label.innerHTML = '<span class="al-dot"></span>' + config.label;
-                card.appendChild(label);
+                // Create attack label element (hidden until cascaded in)
+                const labelEl = document.createElement('div');
+                labelEl.className = 'attack-label al-' + config.color;
+                labelEl.innerHTML = '<span class="al-dot"></span><span class="al-text">' + config.label + '</span>';
+                card.appendChild(labelEl);
+
+                const entry = { card, labelEl, origLabel: config.label, origColor: config.color, order: config.order };
+                attackCards.push(entry);
+                cardsByKey[key] = entry;
                 break;
             }
         }
     });
 
+    // Sort by cascade order so we reveal in sequence
+    attackCards.sort((a, b) => a.order - b.order);
+
+    // Air gap element — animated during recovery
+    const airGap = document.getElementById('air-gap');
+
+    // Track pending timeouts so we can cancel mid-cascade
+    let cascadeTimers = [];
+    let isRecovering = false;
+
     // ── Toggle button ──
     const toggle = document.getElementById('attack-toggle');
     const toggleText = toggle.querySelector('.toggle-text');
 
-    function setAttackState(active) {
-        document.body.classList.toggle('attack-active', active);
-        toggleText.textContent = active ? 'Clear Attack' : 'Simulate Attack';
+    /** Set the air gap visual state: 'locked' (default red), 'open' (cyan), or 'sealed' (green). */
+    function setAirGapState(state) {
+        airGap.classList.remove('gap-open', 'gap-sealed');
+        if (state === 'open') airGap.classList.add('gap-open');
+        else if (state === 'sealed') airGap.classList.add('gap-sealed');
+    }
+
+    /** Update a card's label text and color class. */
+    function setLabel(entry, text, color) {
+        const labelEl = entry.labelEl;
+        labelEl.querySelector('.al-text').textContent = text;
+        // Swap color class (al-red, al-amber, al-green, al-cyan)
+        labelEl.className = labelEl.className.replace(/al-(red|amber|green|cyan)/g, '');
+        labelEl.classList.add('al-' + color);
+    }
+
+    /**
+     * Cascade the attack state onto cards one at a time.
+     * Each card lights up ~900ms after the previous, giving the
+     * audience a visual "the attack is spreading" moment.
+     */
+    function startAttackCascade() {
+        // Cancel anything in progress
+        cascadeTimers.forEach(t => clearTimeout(t));
+        cascadeTimers = [];
+        isRecovering = false;
+
+        toggleText.textContent = 'Recover';
+        document.body.classList.add('attack-active');
+        setAirGapState('locked');
+
+        // Reset all cards to original attack labels
+        attackCards.forEach(entry => {
+            delete entry.card.dataset.attack;
+            setLabel(entry, entry.origLabel, entry.origColor);
+        });
+
+        attackCards.forEach((entry, i) => {
+            const timer = setTimeout(() => {
+                entry.card.dataset.attack = entry.card.dataset.attackLevel;
+            }, i * 900);
+            cascadeTimers.push(timer);
+        });
+    }
+
+    /**
+     * Recovery cascade — follows the Dell Cyber Recovery workflow:
+     * Vault activates → CyberSense scans → clean PIT identified →
+     * data restores back through the infrastructure → production resumes.
+     */
+    function startRecoveryCascade() {
+        cascadeTimers.forEach(t => clearTimeout(t));
+        cascadeTimers = [];
+        isRecovering = true;
+
+        toggleText.textContent = 'Recovering...';
+        toggle.disabled = true;
+
+        // Find the index where we transition from recovering → restored
+        // (that's when the vault seals back up)
+        const sealIndex = RECOVERY_SEQUENCE.findIndex(s => s.state === 'restored');
+
+        RECOVERY_SEQUENCE.forEach((step, i) => {
+            const entry = cardsByKey[step.key];
+            if (!entry) return;
+
+            const timer = setTimeout(() => {
+                // Open air gap on the very first recovery step (vault sync)
+                if (i === 0) setAirGapState('open');
+                // Seal air gap when restoration phase begins
+                if (i === sealIndex) setAirGapState('sealed');
+
+                entry.card.dataset.attack = step.state;
+                setLabel(entry, step.label, step.color);
+            }, i * 900);
+            cascadeTimers.push(timer);
+        });
+
+        // After full recovery, brief pause then clean up
+        const finalTimer = setTimeout(() => {
+            attackCards.forEach(entry => {
+                delete entry.card.dataset.attack;
+                setLabel(entry, entry.origLabel, entry.origColor);
+            });
+            setAirGapState('locked');
+            document.body.classList.remove('attack-active');
+            toggleText.textContent = 'Simulate Attack';
+            toggle.disabled = false;
+            isRecovering = false;
+        }, RECOVERY_SEQUENCE.length * 900 + 1500);
+        cascadeTimers.push(finalTimer);
     }
 
     toggle.addEventListener('click', () => {
-        setAttackState(!document.body.classList.contains('attack-active'));
+        if (isRecovering) return;
+        const isActive = document.body.classList.contains('attack-active');
+        if (isActive) {
+            startRecoveryCascade();
+        } else {
+            startAttackCascade();
+        }
     });
 
     // ── URL parameter support: /infrastructure?state=attacked ──
+    // When linked from dashboard "Attack View", show all at once (no cascade delay)
     const params = new URLSearchParams(window.location.search);
     if (params.get('state') === 'attacked') {
-        setAttackState(true);
+        document.body.classList.add('attack-active');
+        attackCards.forEach(entry => {
+            entry.card.dataset.attack = entry.card.dataset.attackLevel;
+        });
+        toggleText.textContent = 'Recover';
     }
 })();
 </script>

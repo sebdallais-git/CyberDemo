@@ -4,13 +4,20 @@
 
     <div class="space-y-3">
         <template x-for="(step, index) in stepDefs" :key="index">
-            <div class="flex items-center gap-4">
+            <div class="flex items-center gap-4 rounded-lg px-2 py-1 -mx-2 transition-all"
+                 :class="{
+                     'cursor-pointer hover:bg-blue-950/30 ring-1 ring-blue-500/50': paused && index === 1 && pauseIncidentUrl,
+                     'cursor-pointer hover:bg-emerald-950/30 ring-1 ring-emerald-500/50': paused && index === 1 && !pauseIncidentUrl,
+                 }"
+                 @click="paused && index === 1 && handlePauseAction()">
                 <!-- Step indicator -->
                 <div class="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-500"
                      :class="{
                          'bg-gray-800 text-gray-500': !steps[index] || steps[index].status === 'pending',
                          'bg-amber-500/20 text-amber-400 ring-2 ring-amber-500/50 animate-pulse': steps[index] && steps[index].status === 'running',
-                         'bg-emerald-500/20 text-emerald-400 ring-2 ring-emerald-500/50': steps[index] && steps[index].status === 'complete',
+                         'bg-emerald-500/20 text-emerald-400 ring-2 ring-emerald-500/50': steps[index] && steps[index].status === 'complete' && !(paused && index === 1),
+                         'bg-blue-500/20 text-blue-400 ring-2 ring-blue-500/50 animate-pulse': paused && index === 1 && pauseIncidentUrl,
+                         'bg-emerald-500/20 text-emerald-400 ring-2 ring-emerald-500/50 animate-pulse': paused && index === 1 && !pauseIncidentUrl,
                          'bg-red-500/20 text-red-400 ring-2 ring-red-500/50': steps[index] && steps[index].status === 'error',
                      }">
                     <span x-text="index + 1"></span>
@@ -22,21 +29,29 @@
                           :class="{
                               'text-gray-600': !steps[index] || steps[index].status === 'pending',
                               'text-amber-400': steps[index] && steps[index].status === 'running',
-                              'text-emerald-400': steps[index] && steps[index].status === 'complete',
+                              'text-emerald-400': steps[index] && steps[index].status === 'complete' && !(paused && index === 1),
+                              'text-blue-400': paused && index === 1 && pauseIncidentUrl,
+                              'text-emerald-400': paused && index === 1 && !pauseIncidentUrl,
                               'text-red-400': steps[index] && steps[index].status === 'error',
                           }"
                           x-text="step.name"></span>
                 </div>
 
-                <!-- Step message -->
+                <!-- Step message — shows action hint when step 2 is paused -->
                 <div class="flex-1 min-w-0">
                     <p class="text-xs truncate"
                        :class="{
                            'text-gray-600': !steps[index],
                            'text-gray-300': steps[index] && steps[index].status === 'running',
-                           'text-gray-400': steps[index] && steps[index].status === 'complete',
+                           'text-gray-400': steps[index] && steps[index].status === 'complete' && !(paused && index === 1),
+                           'text-blue-300 font-semibold': paused && index === 1 && pauseIncidentUrl,
+                           'text-emerald-300 font-semibold': paused && index === 1 && !pauseIncidentUrl,
                        }"
-                       x-text="steps[index] ? steps[index].message : step.waiting"></p>
+                       x-text="paused && index === 1 && pauseIncidentUrl
+                           ? '← Click to open ServiceNow incident'
+                           : paused && index === 1 && !pauseIncidentUrl
+                               ? '← Click to continue recovery workflow'
+                               : steps[index] ? steps[index].message : step.waiting"></p>
                 </div>
 
                 <!-- Timestamp -->

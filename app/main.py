@@ -66,6 +66,17 @@ async def trigger_scenario(payload: ScenarioRequest):
     return EventSourceResponse(run_scenario(payload.type))
 
 
+@app.post("/api/scenario/resume")
+async def resume_scenario():
+    """Resume a paused scenario (presenter clicked 'Continue')."""
+    from app.orchestrator import get_resume_event
+    event = get_resume_event()
+    if event:
+        event.set()
+        return {"status": "resumed"}
+    return {"status": "not_paused"}
+
+
 @app.get("/api/status")
 async def api_status():
     """Return connectivity status for ServiceNow and Dell CR."""
