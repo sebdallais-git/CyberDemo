@@ -13,6 +13,7 @@ from typing import AsyncGenerator, Optional
 
 from app.config import settings
 from app.dellcr_client import dellcr_client
+from app.events import publish
 from app.models import SSEEvent, StepStatus, ScenarioType
 from app.servicenow_client import snow_client
 from app.snowflake_client import snowflake_client
@@ -52,13 +53,13 @@ SCENARIO_DETAILS = {
         "category": "Intrusion",
     },
     ScenarioType.DATA_EXFIL: {
-        "short_description": "HIGH: Intellectual property exfiltration — GxP and clinical data",
+        "short_description": "CRITICAL: Intellectual property exfiltration — GxP and clinical data",
         "description": (
             "Slow exfiltration of GxP validation data and synthesis routes "
             "detected via covert DNS channel. 4.2 GB exfiltrated over 72 hours. "
             "Insider threat suspected — compromised service account."
         ),
-        "priority": "2",
+        "priority": "1",
         "category": "Data Theft",
     },
 }
@@ -74,6 +75,17 @@ def _sse(step: int, name: str, status: StepStatus, message: str, data: dict = No
         data=data or {},
     )
     return {"data": event.model_dump_json()}
+
+
+async def _emit(step: int, name: str, status: StepStatus, message: str, data: dict = None) -> dict:
+    """Build an SSE event and publish to the internal event bus (for Director).
+
+    Returns the SSE dict so callers can yield it directly:
+        yield await _emit(1, "DETECT", StepStatus.RUNNING, "Scanning...")
+    """
+    sse = _sse(step, name, status, message, data)
+    await publish({"step": step, "name": name, "status": status.value, "message": message, "data": data or {}})
+    return sse
 
 
 async def run_scenario(scenario_type: ScenarioType) -> AsyncGenerator[str, None]:
@@ -101,7 +113,7 @@ async def run_scenario(scenario_type: ScenarioType) -> AsyncGenerator[str, None]
 
     # ── Step 1: DETECT (Snowflake AI) ─────────────────────────────
     snowflake_data = {}
-    yield _sse(1, "DETECT", StepStatus.RUNNING,
+    yield await _emit(1, "DETECT", StepStatus.RUNNING,
                "Snowflake AI scanning SIEM telemetry — querying anomaly models...")
     try:
         # Swap in scenario-specific SIEM data before querying
@@ -110,7 +122,7 @@ async def run_scenario(scenario_type: ScenarioType) -> AsyncGenerator[str, None]
         max_score = snowflake_data.get("max_threat_score", 0)
         threat_count = snowflake_data.get("threat_count", 0)
         primary = snowflake_data.get("primary_host", "unknown")
-        yield _sse(1, "DETECT", StepStatus.COMPLETE,
+        yield await _emit(1, "DETECT", StepStatus.COMPLETE,
                    f"Snowflake AI: THREAT DETECTED — {primary} score {max_score}/10 "
                    f"({threat_count} anomalous hosts)",
                    {
@@ -127,7 +139,7 @@ async def run_scenario(scenario_type: ScenarioType) -> AsyncGenerator[str, None]
     except Exception as e:
         logger.error(f"Snowflake detection error: {e}")
         await asyncio.sleep(1.5)
-        yield _sse(1, "DETECT", StepStatus.COMPLETE,
+        yield await _emit(1, "DETECT", StepStatus.COMPLETE,
                    f"Detected: {details['short_description']}",
                    {"category": details["category"], "priority": details["priority"],
                     "source": "fallback"})
@@ -141,7 +153,7 @@ async def run_scenario(scenario_type: ScenarioType) -> AsyncGenerator[str, None]
     # AI Factory scenario: also link to Databricks workspace so presenter can show the damage
     if scenario_type == ScenarioType.AI_FACTORY and settings.DATABRICKS_HOST:
         pause_data["databricks_url"] = f"https://{settings.DATABRICKS_HOST}/#workspace/Shared/BaselPharma-RD/BPX-7721_Training_Pipeline"
-    yield _sse(1, "PAUSE", StepStatus.COMPLETE,
+    yield await _emit(1, "PAUSE", StepStatus.COMPLETE,
                "Paused — view Snowflake threat analysis, then continue",
                pause_data)
     try:
@@ -150,13 +162,15 @@ async def run_scenario(scenario_type: ScenarioType) -> AsyncGenerator[str, None]
         _resume_event = None
 
     # ── Step 2: INCIDENT ────────────────────────────────────────────
-    yield _sse(2, "INCIDENT", StepStatus.RUNNING, "Creating ServiceNow Security Incident...")
+    yield await _emit(2, "INCIDENT", StepStatus.RUNNING, "Creating ServiceNow Security Incident...")
     try:
         snow_available = await snow_client.is_available()
         if snow_available:
             result = await snow_client.create_security_incident({
                 "short_description": details["short_description"],
                 "description": details["description"],
+                "impact": "1",    # 1 = High (enterprise-wide)
+                "urgency": "1",   # 1 = High (immediate)
                 "priority": details["priority"],
                 "category": details["category"],
                 "state": "1",  # New
@@ -164,7 +178,7 @@ async def run_scenario(scenario_type: ScenarioType) -> AsyncGenerator[str, None]
             incident_sys_id = result.get("sys_id", "")
             incident_number = result.get("number", "INC-UNKNOWN")
             incident_url = f"{settings.SNOW_INSTANCE_URL}/incident.do?sys_id={incident_sys_id}"
-            yield _sse(2, "INCIDENT", StepStatus.COMPLETE,
+            yield await _emit(2, "INCIDENT", StepStatus.COMPLETE,
                        f"ServiceNow incident {incident_number} created (REAL)",
                        {"sys_id": incident_sys_id, "number": incident_number,
                         "url": incident_url, "mode": "live"})
@@ -172,7 +186,7 @@ async def run_scenario(scenario_type: ScenarioType) -> AsyncGenerator[str, None]
             # ServiceNow not reachable — use mock data
             await asyncio.sleep(1.0)
             incident_number = "INC0000000"
-            yield _sse(2, "INCIDENT", StepStatus.COMPLETE,
+            yield await _emit(2, "INCIDENT", StepStatus.COMPLETE,
                        f"ServiceNow incident {incident_number} created (MOCK)",
                        {"sys_id": "mock-sys-id", "number": incident_number,
                         "url": "", "mode": "mock"})
@@ -180,7 +194,7 @@ async def run_scenario(scenario_type: ScenarioType) -> AsyncGenerator[str, None]
         logger.error(f"ServiceNow error: {e}")
         await asyncio.sleep(1.0)
         incident_number = "SIR0010042"
-        yield _sse(2, "INCIDENT", StepStatus.COMPLETE,
+        yield await _emit(2, "INCIDENT", StepStatus.COMPLETE,
                    f"ServiceNow incident {incident_number} created (MOCK - SN unavailable)",
                    {"number": incident_number, "mode": "mock", "error": str(e)})
 
@@ -190,7 +204,7 @@ async def run_scenario(scenario_type: ScenarioType) -> AsyncGenerator[str, None]
     # Wrapped in try/finally so _resume_event is cleaned up if the client
     # disconnects while we're waiting (GeneratorExit from aclose()).
     _resume_event = asyncio.Event()
-    yield _sse(2, "PAUSE", StepStatus.COMPLETE,
+    yield await _emit(2, "PAUSE", StepStatus.COMPLETE,
                "Paused — review incident in ServiceNow, then continue",
                {"pause_type": "servicenow", "pause_url": incident_url,
                 "number": incident_number})
@@ -200,7 +214,7 @@ async def run_scenario(scenario_type: ScenarioType) -> AsyncGenerator[str, None]
         _resume_event = None
 
     # ── Step 3: VAULT SYNC ──────────────────────────────────────────
-    yield _sse(3, "VAULT SYNC", StepStatus.RUNNING,
+    yield await _emit(3, "VAULT SYNC", StepStatus.RUNNING,
                "Opening air gap — replicating to cyber vault...")
     try:
         # If mock mode, set the scenario on the mock server
@@ -221,35 +235,35 @@ async def run_scenario(scenario_type: ScenarioType) -> AsyncGenerator[str, None]
             if status.get("vault_state") != "SYNCING":
                 break
 
-        yield _sse(3, "VAULT SYNC", StepStatus.COMPLETE,
+        yield await _emit(3, "VAULT SYNC", StepStatus.COMPLETE,
                    "Air gap closed — data replicated to vault",
                    {"vault_state": "LOCKED", "policy": "PharmaProd-Daily-Replication"})
     except Exception as e:
         logger.error(f"Dell CR sync error: {e}")
         await asyncio.sleep(3.0)
-        yield _sse(3, "VAULT SYNC", StepStatus.COMPLETE,
+        yield await _emit(3, "VAULT SYNC", StepStatus.COMPLETE,
                    "Vault sync complete (simulated)",
                    {"vault_state": "LOCKED", "error": str(e)})
 
     # ── Step 4: CYBERSENSE ──────────────────────────────────────────
-    yield _sse(4, "CYBERSENSE", StepStatus.RUNNING,
+    yield await _emit(4, "CYBERSENSE", StepStatus.RUNNING,
                "CyberSense ML analysis scanning vault copy...")
     try:
         analysis_data = await dellcr_client.run_cybersense("sandbox-pharma-01")
         confidence = analysis_data.get("confidence", 99.99)
-        yield _sse(4, "CYBERSENSE", StepStatus.COMPLETE,
+        yield await _emit(4, "CYBERSENSE", StepStatus.COMPLETE,
                    f"CyberSense: CORRUPTION DETECTED ({confidence}% confidence)",
                    {"confidence": confidence, "verdict": "CORRUPTION_DETECTED"})
     except Exception as e:
         logger.error(f"CyberSense error: {e}")
         await asyncio.sleep(5.0)
         analysis_data = {"confidence": 99.99, "corrupted_files": [], "recovery_recommendation": {}}
-        yield _sse(4, "CYBERSENSE", StepStatus.COMPLETE,
+        yield await _emit(4, "CYBERSENSE", StepStatus.COMPLETE,
                    "CyberSense: CORRUPTION DETECTED (99.99% confidence, simulated)",
                    {"confidence": 99.99})
 
     # ── Step 5: FORENSICS ───────────────────────────────────────────
-    yield _sse(5, "FORENSICS", StepStatus.RUNNING, "Extracting forensic data...")
+    yield await _emit(5, "FORENSICS", StepStatus.RUNNING, "Extracting forensic data...")
     await asyncio.sleep(5.0)
 
     corrupted = analysis_data.get("corrupted_files", [])
@@ -257,7 +271,7 @@ async def run_scenario(scenario_type: ScenarioType) -> AsyncGenerator[str, None]
     recovery_rec = analysis_data.get("recovery_recommendation", {})
     pit_id = recovery_rec.get("pit_id", pit_id)
 
-    yield _sse(5, "FORENSICS", StepStatus.COMPLETE,
+    yield await _emit(5, "FORENSICS", StepStatus.COMPLETE,
                f"Forensics complete: {len(corrupted)} corrupted files identified",
                {
                    "corrupted_count": len(corrupted),
@@ -309,18 +323,18 @@ async def run_scenario(scenario_type: ScenarioType) -> AsyncGenerator[str, None]
     await asyncio.sleep(3.0)
 
     # ── Step 6: RECOVER ─────────────────────────────────────────────
-    yield _sse(6, "RECOVER", StepStatus.RUNNING,
+    yield await _emit(6, "RECOVER", StepStatus.RUNNING,
                f"Restoring from clean PIT copy {pit_id}...")
     try:
         recovery_result = await dellcr_client.initiate_recovery(pit_id)
         restored_files = recovery_result.get("restored_files", 1704)
-        yield _sse(6, "RECOVER", StepStatus.COMPLETE,
+        yield await _emit(6, "RECOVER", StepStatus.COMPLETE,
                    f"Recovery complete: {restored_files} files restored from clean copy",
                    {"pit_id": pit_id, "restored_files": restored_files})
     except Exception as e:
         logger.error(f"Recovery error: {e}")
         await asyncio.sleep(4.0)
-        yield _sse(6, "RECOVER", StepStatus.COMPLETE,
+        yield await _emit(6, "RECOVER", StepStatus.COMPLETE,
                    "Recovery complete: 1704 files restored (simulated)",
                    {"pit_id": pit_id, "restored_files": 1704})
 
@@ -328,7 +342,7 @@ async def run_scenario(scenario_type: ScenarioType) -> AsyncGenerator[str, None]
     await asyncio.sleep(2.0)
 
     # ── Step 7: RESOLVE ─────────────────────────────────────────────
-    yield _sse(7, "RESOLVE", StepStatus.RUNNING,
+    yield await _emit(7, "RESOLVE", StepStatus.RUNNING,
                "Updating ServiceNow incident to resolved...")
     try:
         if incident_sys_id:
@@ -340,23 +354,23 @@ async def run_scenario(scenario_type: ScenarioType) -> AsyncGenerator[str, None]
                 f"All systems verified clean and operational."
             )
             await snow_client.resolve_incident(incident_sys_id, resolution_notes)
-            yield _sse(7, "RESOLVE", StepStatus.COMPLETE,
+            yield await _emit(7, "RESOLVE", StepStatus.COMPLETE,
                        f"ServiceNow {incident_number} resolved with forensic report (REAL)",
                        {"number": incident_number, "state": "Resolved", "mode": "live"})
         else:
             await asyncio.sleep(1.5)
-            yield _sse(7, "RESOLVE", StepStatus.COMPLETE,
+            yield await _emit(7, "RESOLVE", StepStatus.COMPLETE,
                        f"ServiceNow {incident_number} resolved with forensic report (MOCK)",
                        {"number": incident_number, "state": "Resolved", "mode": "mock"})
     except Exception as e:
         logger.error(f"ServiceNow resolve error: {e}")
         await asyncio.sleep(1.5)
-        yield _sse(7, "RESOLVE", StepStatus.COMPLETE,
+        yield await _emit(7, "RESOLVE", StepStatus.COMPLETE,
                    f"Incident {incident_number} resolved (MOCK - SN unavailable)",
                    {"number": incident_number, "state": "Resolved", "mode": "mock"})
 
     # Final event — scenario complete with Dell closing message
-    yield _sse(7, "COMPLETE", StepStatus.COMPLETE,
+    yield await _emit(7, "COMPLETE", StepStatus.COMPLETE,
                "All systems restored. Business continuity secured.",
                {
                    "scenario": scenario_type.value,
