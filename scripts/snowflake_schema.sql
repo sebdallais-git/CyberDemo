@@ -39,7 +39,7 @@ CREATE TABLE IF NOT EXISTS ANOMALY_SCORES (
 CREATE TABLE IF NOT EXISTS ENDPOINT_EVENTS (
     event_id        VARCHAR(20)  NOT NULL,
     hostname        VARCHAR(50)  NOT NULL,
-    event_type      VARCHAR(30)  NOT NULL,       -- MALWARE, ENCRYPTION, C2_CALLBACK, etc.
+    event_type      VARCHAR(30)  NOT NULL,       -- MALWARE, ENCRYPTION, OUTBOUND, etc.
     severity        VARCHAR(10)  NOT NULL,       -- CRITICAL, HIGH, MEDIUM, LOW
     detection_name  VARCHAR(80)  NOT NULL,
     risk_score      FLOAT        NOT NULL,

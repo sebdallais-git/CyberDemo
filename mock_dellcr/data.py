@@ -126,39 +126,39 @@ SCENARIOS = {
         "entry_point": "Compromised VPN credentials (phishing)",
         "iocs": [
             "SHA256: a1b2c3d4e5f6...lockbit_payload.exe",
-            "C2: 185.220.101.xx:443",
+            "Outbound: connection to rogue IP on port 443",
             "Ransom note: RESTORE-FILES.txt in 847 directories",
         ],
     },
     "ai_factory": {
-        "title": "APT Compromise of AI Drug Discovery Pipeline",
-        "description": "Nation-state APT targeting BaselPharma R&D AI Factory. "
-                       "Databricks Unity Catalog credentials stolen via compromised service principal. "
-                       "MLflow experiments encrypted, molecular simulation training data corrupted on PowerScale. "
+        "title": "Nation-State Intrusion on AI Drug Discovery Pipeline",
+        "description": "Sophisticated intrusion targeting BaselPharma R&D AI pipeline. "
+                       "Stolen credentials used to access ML experiments and training data. "
+                       "Molecular simulation data corrupted, GPU compute halted. "
                        "Phase III candidate BPX-7721 pipeline at risk.",
         "severity": "critical",
         "attack_vector": "credential_theft_lateral_movement",
         "ransomware_family": "NotPetya-variant (wiper + encryption)",
-        "entry_point": "Compromised Databricks service principal (OAuth token theft)",
+        "entry_point": "Stolen service account credentials",
         "iocs": [
             "SHA256: c4d5e6f7a8b9...dbx_exfil_toolkit.py",
-            "API: Anomalous Unity Catalog bulk_export calls (14,000 in 3 min)",
-            "C2: 91.234.99.xx:8443 (APT41 infrastructure)",
-            "PowerScale: /ai-data/training/* — 2.1 TB encrypted in 47 seconds",
+            "API: Anomalous bulk export calls (14,000 in 3 min)",
+            "Outbound: connection to rogue IP on port 8443",
+            "Training data: 2.1 TB destroyed in 47 seconds",
         ],
     },
     "data_exfil": {
-        "title": "Data Exfiltration via DNS Tunneling",
-        "description": "Slow exfiltration of GxP validation data and API synthesis routes "
-                       "via DNS TXT record queries to external C2. 4.2 GB exfiltrated over 72 hours.",
+        "title": "Intellectual Property Exfiltration",
+        "description": "Slow exfiltration of GxP validation data and synthesis routes "
+                       "via covert DNS channel. 4.2 GB exfiltrated over 72 hours.",
         "severity": "high",
         "attack_vector": "dns_tunneling",
         "ransomware_family": "N/A (data theft)",
         "entry_point": "Insider threat + compromised service account",
         "iocs": [
-            "DNS: *.data.pharma-analytics[.]xyz (exfil channel)",
-            "Volume: 4.2 GB encoded in 2.1M DNS queries",
-            "Account: svc_lims_readonly (privilege escalation)",
+            "Covert channel: DNS-based data exfiltration",
+            "Volume: 4.2 GB over 72 hours",
+            "Account: compromised service account with elevated access",
         ],
     },
 }

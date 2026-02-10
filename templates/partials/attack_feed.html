@@ -69,24 +69,27 @@
                           'bg-purple-500/20 text-purple-300 border border-purple-500/30': evt.severity === 'BUSINESS',
                           'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30':     evt.severity === 'RECOVERY',
                           'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30': evt.severity === 'RESOLVED',
+                          'bg-blue-500/20 text-blue-300 border border-blue-500/30':     evt.severity === 'DELL',
                       }"
-                      x-text="evt.severity === 'BUSINESS' ? 'IMPACT' : evt.severity">
+                      x-text="evt.severity === 'BUSINESS' ? 'IMPACT' : evt.severity === 'DELL' ? 'DELL' : evt.severity">
                 </span>
 
                 <!-- System name -->
                 <span class="font-mono font-bold shrink-0 w-28"
                       :class="{
-                          'text-gray-300': evt.severity !== 'RECOVERY' && evt.severity !== 'RESOLVED',
+                          'text-gray-300': !['RECOVERY','RESOLVED','DELL'].includes(evt.severity),
                           'text-cyan-300': evt.severity === 'RECOVERY',
                           'text-emerald-300': evt.severity === 'RESOLVED',
+                          'text-blue-300': evt.severity === 'DELL',
                       }"
                       x-text="evt.system"></span>
 
                 <!-- Description -->
                 <span :class="{
-                          'text-gray-400': evt.severity !== 'RECOVERY' && evt.severity !== 'RESOLVED',
+                          'text-gray-400': !['RECOVERY','RESOLVED','DELL'].includes(evt.severity),
                           'text-cyan-300/80': evt.severity === 'RECOVERY',
                           'text-emerald-300/80': evt.severity === 'RESOLVED',
+                          'text-blue-200/90': evt.severity === 'DELL',
                       }"
                       x-text="evt.message"></span>
             </div>

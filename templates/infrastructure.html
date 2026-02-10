@@ -1305,7 +1305,7 @@
     // Maps product model text → attack level, label, and cascade order.
     // order: lower = earlier in the attack chain (propagates left → right across zones).
     const ATTACK_MAP = {
-        'XR4000':              { level: 'at-risk',     label: 'Initial Access — Phished Credential → C2 185.220.101.x', color: 'amber', order: 1 },
+        'XR4000':              { level: 'at-risk',     label: 'Initial Access — Phished Credential → Rogue IP Contacted', color: 'amber', order: 1 },
         'SCADA-HIST-01':       { level: 'compromised', label: 'Shadow Copies Deleted — PI Database Encrypted',          color: 'red',   order: 2 },
         'PI Server 2024':      { level: 'compromised', label: 'Application Layer Locked — No Tag Access',               color: 'red',   order: 3 },
         'SCADA-HIST-02':       { level: 'at-risk',     label: 'Encrypted Data Replicating via PI HA Channel',           color: 'amber', order: 4 },
@@ -1329,7 +1329,7 @@
         { key: 'SCADA-HIST-01',       state: 'recovering', label: 'PI Database Restoring — 1,704 Files from Clean PIT',  color: 'cyan' },
         { key: 'PI Server 2024',      state: 'recovering', label: 'Application Layer Unlocked — Tag Access Restored',    color: 'cyan' },
         { key: 'SCADA-HIST-02',       state: 'recovering', label: 'HA Replication Resynchronized from Primary',          color: 'cyan' },
-        { key: 'XR4000',              state: 'recovering', label: 'Credentials Rotated — C2 Channel Blocked',            color: 'cyan' },
+        { key: 'XR4000',              state: 'recovering', label: 'Credentials Rotated — Rogue Connection Blocked',      color: 'cyan' },
         // Final phase: everything restored
         { key: 'CR 19.22',            state: 'restored',   label: 'Air Gap Sealed — Vault Locked',                       color: 'green' },
         { key: 'ML Analytics',        state: 'restored',   label: 'Clean Baseline Confirmed',                            color: 'green' },

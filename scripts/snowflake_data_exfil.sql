@@ -15,32 +15,32 @@ USE SCHEMA SIEM;
 INSERT INTO ANOMALY_SCORES (score_id, entity_type, entity_name, entity_ip, current_score, baseline_score, anomaly_delta, anomaly_label, contributing_factors, model_version, computed_at)
 SELECT 'AS-DE-001', 'HOST', 'LIMS-DB-01', '10.50.2.10', 9.20, 1.0, 8.20, 'CRITICAL_ANOMALY',
        PARSE_JSON('{
-           "bulk_select_queries": "47000 rows/min (normal: 200/min)",
+           "bulk_data_access": "47000 rows/min (normal: 200/min)",
            "gxp_data_accessed": "validation records + batch genealogy",
-           "service_account_abuse": "svc_lims_readonly",
-           "off_hours_activity": "02:00-05:00 CET pattern",
-           "data_staging_detected": "/tmp/.cache/lims_export/"
+           "compromised_account": true,
+           "off_hours_activity": "02:00-05:00 CET — no legitimate user",
+           "data_staging_detected": true
        }'),
        'sf-anomaly-v3.2', CURRENT_TIMESTAMP();
 
 INSERT INTO ANOMALY_SCORES (score_id, entity_type, entity_name, entity_ip, current_score, baseline_score, anomaly_delta, anomaly_label, contributing_factors, model_version, computed_at)
 SELECT 'AS-DE-002', 'HOST', 'DNS-PROXY-01', '10.50.3.10', 8.80, 0.7, 8.10, 'CRITICAL_ANOMALY',
        PARSE_JSON('{
-           "dns_tunneling": true,
-           "txt_record_anomaly": "avg 230 bytes/query (normal: 40)",
-           "exfil_domain": "*.update-service.xyz",
+           "covert_data_channel": true,
+           "abnormal_traffic_pattern": "6x normal volume",
            "total_exfiltrated_est": "4.2 GB over 72 hours",
-           "query_rate": "1200 queries/min (normal: 50)"
+           "query_rate": "1200 queries/min (normal: 50)",
+           "role": "data exfiltration conduit"
        }'),
        'sf-anomaly-v3.2', CURRENT_TIMESTAMP();
 
 INSERT INTO ANOMALY_SCORES (score_id, entity_type, entity_name, entity_ip, current_score, baseline_score, anomaly_delta, anomaly_label, contributing_factors, model_version, computed_at)
 SELECT 'AS-DE-003', 'HOST', 'ERP-CHEM-01', '10.50.2.20', 7.60, 0.9, 6.70, 'HIGH_ANOMALY',
        PARSE_JSON('{
-           "synthesis_routes_accessed": "12 proprietary API routes",
+           "synthesis_routes_accessed": "12 proprietary formulas",
            "bulk_export_pattern": true,
-           "service_account_reuse": "svc_lims_readonly (cross-system)",
-           "file_staging": "/opt/erp/export/chem_routes.tar.gz"
+           "compromised_account_reused": true,
+           "ip_theft_confirmed": "trade secret material exported"
        }'),
        'sf-anomaly-v3.2', CURRENT_TIMESTAMP();
 
@@ -48,9 +48,9 @@ INSERT INTO ANOMALY_SCORES (score_id, entity_type, entity_name, entity_ip, curre
 SELECT 'AS-DE-004', 'HOST', 'CLINICAL-DW-01', '10.50.2.30', 7.10, 1.2, 5.90, 'HIGH_ANOMALY',
        PARSE_JSON('{
            "patient_trial_data_accessed": "Phase III BPX-7721 cohort",
-           "hipaa_pii_exposure": "12000 patient records queried",
-           "unusual_join_pattern": "demographics + outcomes + adverse events",
-           "export_to_csv": true
+           "pii_exposure": "12000 patient records queried",
+           "data_correlated": "demographics + outcomes + adverse events",
+           "exported": true
        }'),
        'sf-anomaly-v3.2', CURRENT_TIMESTAMP();
 
@@ -58,16 +58,16 @@ SELECT 'AS-DE-004', 'HOST', 'CLINICAL-DW-01', '10.50.2.30', 7.10, 1.2, 5.90, 'HI
 
 INSERT INTO ENDPOINT_EVENTS (event_id, hostname, event_type, severity, detection_name, risk_score, process_name, file_path, event_time)
 VALUES
-    ('EVT-DE-001', 'LIMS-DB-01', 'DATA_EXFIL', 'CRITICAL', 'BulkSelect.GxPRecords', 9.50, 'sqlservr.exe', NULL, CURRENT_TIMESTAMP()),
-    ('EVT-DE-002', 'LIMS-DB-01', 'CREDENTIAL_ABUSE', 'CRITICAL', 'ServiceAccount.OffHours', 9.30, 'svc_lims_readonly', NULL, CURRENT_TIMESTAMP()),
-    ('EVT-DE-003', 'LIMS-DB-01', 'FILE_STAGING', 'HIGH', 'TempDir.DataStaging', 8.80, 'tar', '/tmp/.cache/lims_export/', CURRENT_TIMESTAMP()),
-    ('EVT-DE-004', 'DNS-PROXY-01', 'DNS_TUNNELING', 'CRITICAL', 'DNS.TXT.Exfiltration', 9.40, 'iodine', NULL, CURRENT_TIMESTAMP()),
-    ('EVT-DE-005', 'DNS-PROXY-01', 'DNS_TUNNELING', 'CRITICAL', 'DNS.HighFrequency.TXT', 9.20, 'dns-tunnel-client', NULL, CURRENT_TIMESTAMP()),
-    ('EVT-DE-006', 'DNS-PROXY-01', 'C2_CALLBACK', 'HIGH', 'DNS.C2.Channel', 8.60, 'resolved', NULL, CURRENT_TIMESTAMP()),
+    ('EVT-DE-001', 'LIMS-DB-01', 'DATA_EXFIL', 'CRITICAL', 'BulkAccess.GxPRecords', 9.50, 'sqlservr.exe', NULL, CURRENT_TIMESTAMP()),
+    ('EVT-DE-002', 'LIMS-DB-01', 'CREDENTIAL_ABUSE', 'CRITICAL', 'Account.OffHoursAccess', 9.30, 'svc_lims_readonly', NULL, CURRENT_TIMESTAMP()),
+    ('EVT-DE-003', 'LIMS-DB-01', 'FILE_STAGING', 'HIGH', 'Data.StagedForExport', 8.80, 'tar', '/tmp/.cache/lims_export/', CURRENT_TIMESTAMP()),
+    ('EVT-DE-004', 'DNS-PROXY-01', 'COVERT_CHANNEL', 'CRITICAL', 'CovertChannel.DataExfil', 9.40, 'iodine', NULL, CURRENT_TIMESTAMP()),
+    ('EVT-DE-005', 'DNS-PROXY-01', 'COVERT_CHANNEL', 'CRITICAL', 'AbnormalTraffic.HighVolume', 9.20, 'dns-tunnel-client', NULL, CURRENT_TIMESTAMP()),
+    ('EVT-DE-006', 'DNS-PROXY-01', 'OUTBOUND', 'HIGH', 'Suspicious.Outbound.Channel', 8.60, 'resolved', NULL, CURRENT_TIMESTAMP()),
     ('EVT-DE-007', 'ERP-CHEM-01', 'DATA_EXFIL', 'HIGH', 'BulkExport.SynthesisRoutes', 8.40, 'sap_export.sh', '/opt/erp/export/', CURRENT_TIMESTAMP()),
-    ('EVT-DE-008', 'ERP-CHEM-01', 'FILE_STAGING', 'HIGH', 'Archive.ChemRoutes', 8.10, 'tar', '/opt/erp/export/chem_routes.tar.gz', CURRENT_TIMESTAMP()),
+    ('EVT-DE-008', 'ERP-CHEM-01', 'FILE_STAGING', 'HIGH', 'IPTheft.FormulasExported', 8.10, 'tar', '/opt/erp/export/chem_routes.tar.gz', CURRENT_TIMESTAMP()),
     ('EVT-DE-009', 'CLINICAL-DW-01', 'DATA_EXFIL', 'HIGH', 'BulkQuery.PatientTrialData', 7.80, 'psql', NULL, CURRENT_TIMESTAMP()),
-    ('EVT-DE-010', 'CLINICAL-DW-01', 'PII_ACCESS', 'HIGH', 'HIPAA.BulkPIIQuery', 7.50, 'psql', NULL, CURRENT_TIMESTAMP());
+    ('EVT-DE-010', 'CLINICAL-DW-01', 'PII_ACCESS', 'HIGH', 'PatientPII.BulkAccess', 7.50, 'psql', NULL, CURRENT_TIMESTAMP());
 
 -- ── NETWORK_EVENTS: 20 flows ─────────────────────────────────
 

@@ -352,11 +352,11 @@
 <!-- DEMO SCRIPT (Video 1: Sell Dell) -->
 <template id="script-demo">
 
-    <!-- SCENE 1: HOOK -->
+    <!-- SCENE 1: HOOK — Introduction + Context -->
     <div class="scene">
         <div class="scene-header">
             <span class="scene-time">0:00</span>
-            <span class="scene-label">Hook</span>
+            <span class="scene-label">Introduction</span>
             <span class="scene-divider"></span>
         </div>
         <div class="action">
@@ -364,10 +364,19 @@
             <span class="action-text">ON SCREEN: Dashboard idle, all 3 green dots visible. Screen recording running on Mac.</span>
         </div>
         <p class="narration">
-            What happens when <strong>ransomware</strong> hits your pharmaceutical production line at 2 AM?
+            Hi — I'm Seb, I'm a Global Account Manager at Dell, and I work with pharmaceutical companies to protect their most critical operations.
         </p>
         <p class="narration" style="margin-top:20px">
-            Let me show you a <em>fully automated</em> detection-to-recovery workflow — running live, right now.
+            Let me give you some context. In 2017, a top 5 global pharma lost <span class="stat">$1.4 billion</span> to a single cyberattack. Forty thousand machines wiped in two hours. One researcher lost <em>fifteen years</em> of work.
+        </p>
+        <p class="narration" style="margin-top:20px">
+            More recently, a top 10 biopharma disclosed over <span class="stat">$300 million</span> in losses from a ransomware event that shut down production for weeks.
+        </p>
+        <p class="narration" style="margin-top:20px">
+            These aren't edge cases. This is the reality for our industry. And <strong>at Dell, we take this personally</strong> — because we know your production lines, your research data, and your patients depend on the infrastructure we build together.
+        </p>
+        <p class="narration" style="margin-top:20px">
+            So today, I want to show you what happens when ransomware hits — and more importantly, <em>how we recover in minutes, not months</em>.
         </p>
         <div class="action">
             <span class="action-icon">&#128433;</span>
@@ -431,7 +440,7 @@
             <span class="action-text">Move mouse across the 3 scenario cards. Pause on the red Ransomware button.</span>
         </div>
         <p class="narration">
-            I have three attack scenarios. Let's trigger the worst one — a <strong>LockBit 4.0 ransomware</strong> attack on the SCADA historian.
+            I have three attack scenarios. Let's trigger the worst one — a <strong>ransomware attack</strong> on the SCADA historian.
         </p>
     </div>
 
@@ -465,10 +474,10 @@
             <span class="action-text">Point at the Snowflake panel — the SCADA-HIST-01 threat bar, then the other two hosts.</span>
         </div>
         <p class="narration" style="margin-top:20px">
-            The AI model detected <strong>C2 callbacks to a Russian IP</strong>, shadow copy deletion, and lateral movement via SMB to two other hosts.
+            The AI model detected <strong>outbound connections to a rogue IP</strong>, backup deletion, and lateral movement to two other hosts.
         </p>
         <p class="narration" style="margin-top:20px">
-            This is a <strong>confirmed LockBit 4.0 attack</strong>. Let me show you exactly what it did to the infrastructure.
+            This is a <strong>confirmed ransomware attack</strong>. Let me show you exactly what it did to the infrastructure.
         </p>
     </div>
 
@@ -492,7 +501,7 @@
             <span class="action-text">START on the left — hover the NativeEdge XR4000 in the Plant Floor zone. It pulses AMBER.</span>
         </div>
         <p class="narration" style="margin-top:20px">
-            It started here — at the <em>edge</em>. The <strong>Dell NativeEdge gateway</strong> was compromised through a phished OT operator credential. LockBit used it to establish a <strong>C2 callback</strong> to an IP in Russia — <span class="stat">185.220.101.x</span>.
+            It started here — at the <em>edge</em>. The <strong>gateway</strong> was compromised through a phished OT operator credential. The attacker used it to phone home to a <strong>rogue IP</strong> and establish remote control.
         </p>
 
         <div class="action">
@@ -500,7 +509,7 @@
             <span class="action-text">Move RIGHT to the OT Data Center zone. Hover the PowerEdge R760 — it pulses RED.</span>
         </div>
         <p class="narration" style="margin-top:20px">
-            From there, <strong>lateral movement via SMB</strong> — straight to the primary SCADA historian. This <em>Dell PowerEdge R760</em> runs the AVEVA PI server. LockBit <strong>deleted the shadow copies</strong> first, then encrypted the PI database. Eight years of batch records, temperature logs, GxP compliance data — <strong>all locked</strong>.
+            From there, the attacker moved laterally — straight to the primary SCADA historian. This server runs the AVEVA PI database. The ransomware <strong>deleted the backups</strong> first, then encrypted the database. Eight years of batch records, temperature logs, GxP compliance data — <strong>all locked</strong>.
         </p>
 
         <div class="action">
@@ -524,7 +533,7 @@
             <span class="pause-text">Dramatic pause — let the audience absorb the damage. 2 seconds.</span>
         </div>
         <p class="narration" style="margin-top:20px">
-            So in under sixty seconds, LockBit has moved from edge to historian to HA replica to shared storage. <strong>Four systems compromised or at risk.</strong> Production line B3 is <strong>halted</strong>. GxP data integrity is <strong>gone</strong>.
+            So in under sixty seconds, the ransomware has moved from edge to historian to HA replica to shared storage. <strong>Four systems compromised or at risk.</strong> Production line B3 is <strong>halted</strong>. GxP data integrity is <strong>gone</strong>.
         </p>
         <p class="narration" style="margin-top:20px">
             Now let's talk about what this <em>costs</em>. A pharma production line down is <span class="stat">$500,000 to $2 million per day</span>. But the real damage? You've lost <em>data integrity</em>. The FDA will issue <strong>483 observations</strong>. You can't prove your batches were manufactured correctly — that means <strong>product recalls</strong>, potential <strong>consent decrees</strong>, and your name in the headlines for all the wrong reasons.
@@ -634,7 +643,16 @@
             <span class="action-text">Watch recovery bar hit 100%. Point when incident flips to "Resolved" (green).</span>
         </div>
         <p class="narration" style="margin-top:20px">
-            Think about what just happened. Without this vault, the CISO is on a call with the board explaining <strong>weeks of downtime</strong> and a <strong>ransom demand</strong>. Instead — we restored from a <em>known-clean copy</em> in minutes. No ransom paid. No data loss. No regulatory finding.
+            Think about what just happened. Without this vault —
+        </p>
+        <p class="narration" style="margin-top:16px">
+            The <em>CISO</em> is on a call with the board explaining <strong>weeks of downtime</strong> and a <strong>ransom demand</strong>. The <em>CIO</em> is scrambling to rebuild infrastructure with no timeline. And the <em>line-of-business owners</em>? They're watching $500K vanish <em>every single day</em> while production stays down.
+        </p>
+        <p class="narration" style="margin-top:20px">
+            <strong>They're all in this together</strong> — and they all need the same answer.
+        </p>
+        <p class="narration" style="margin-top:20px">
+            With Dell Cyber Recovery, we restored from a <em>known-clean copy</em> in minutes. No ransom paid. No data loss. No regulatory finding. The CISO has the audit trail, the CIO has the infrastructure back, and the LOB is back in production.
         </p>
         <p class="narration" style="margin-top:20px">
             And the workflow closes the loop: the ServiceNow incident is <em>automatically resolved</em> with a full forensic report attached.
@@ -688,7 +706,13 @@
             Automated. Auditable. Air-gapped.
         </p>
         <p class="narration" style="margin-top:24px">
-            That's <em>Dell Cyber Recovery</em> — turning a <span class="stat">$100 million</span> catastrophe into a <em>two-minute recovery</em>.
+            This is what <em>Zero Trust Cyber Recovery</em> delivers: <strong>peace of mind</strong> for the CISO, a <strong>proven recovery plan</strong> for the CIO, and <strong>business continuity</strong> for the lines of business.
+        </p>
+        <p class="narration" style="margin-top:20px">
+            It <em>pays for itself</em> the day you need it — and every day you sleep soundly because it's there.
+        </p>
+        <p class="narration" style="margin-top:24px">
+            The next step? <em>Let's talk about enabling this for your key business areas.</em> I'd love to understand what keeps you up at night — and show you how we can protect what matters most.
         </p>
         <div class="action">
             <span class="action-icon">&#9209;</span>
@@ -715,13 +739,16 @@
             <span class="action-text">ON SCREEN: Dashboard idle, all 3 green dots visible. Screen recording running.</span>
         </div>
         <p class="narration">
-            In 2017, Merck lost <strong>$1.4 billion</strong> to a single cyberattack. NotPetya wiped forty thousand machines in under two hours. One researcher lost <em>fifteen years</em> of work.
+            Hi — I'm Seb, I'm a Global Account Manager at Dell, and I work with pharmaceutical companies to protect their most critical operations.
         </p>
         <p class="narration" style="margin-top:20px">
-            Today, the stakes are even higher. Pharma companies run <em>AI drug discovery pipelines</em> worth billions. What happens when an APT targets <strong>that</strong>?
+            In 2017, a top 5 global pharma lost <span class="stat">$1.4 billion</span> to a single cyberattack. Forty thousand machines wiped in two hours. One researcher lost <em>fifteen years</em> of work.
         </p>
         <p class="narration" style="margin-top:20px">
-            Let me show you.
+            Today, the stakes are even higher. Pharma companies run <em>AI drug discovery pipelines</em> worth billions — and they're the most valuable targets on the planet. <strong>At Dell, we understand what's at stake</strong> — not just data, but patients waiting for treatments.
+        </p>
+        <p class="narration" style="margin-top:20px">
+            What happens when a sophisticated attack targets your AI pipeline? Let me show you.
         </p>
     </div>
 
@@ -785,7 +812,7 @@
             <span class="action-text">Mouse over the 3 scenario cards. Pause on the purple AI Factory button.</span>
         </div>
         <p class="narration">
-            Now let's simulate what a <strong>nation-state APT</strong> does to this pipeline. Think APT41. Think NotPetya — but targeting <em>AI research</em>.
+            Now let's simulate what a <strong>sophisticated threat actor</strong> does to this pipeline — targeting <em>AI research</em> and your most valuable intellectual property.
         </p>
     </div>
 
@@ -808,7 +835,7 @@
             <span class="pause-text">Wait for Step 1 to complete and the Snowflake panel to appear (~4s)</span>
         </div>
         <p class="narration">
-            Threat detected. Multiple anomalous hosts. The AI model flagged a <strong>compromised Databricks service principal</strong> — someone stole an OAuth token and is using it to bulk-export data from Unity Catalog.
+            Threat detected. Multiple anomalous hosts. The AI model flagged <strong>stolen credentials</strong> — someone is using them to bulk-export data from the <span class="brand">Databricks</span> data catalog.
         </p>
         <div class="action">
             <span class="action-icon">&#128433;</span>
@@ -922,10 +949,16 @@
             <span class="action-text">Watch recovery bar hit 100%. Incident flips to "Resolved".</span>
         </div>
         <p class="narration" style="margin-top:20px">
-            Think about this. Without the vault, your CISO is telling the board that <strong>18 months of AI research is gone</strong>. The Phase III timeline slips. Stock drops. Competitors gain a <span class="stat">12-month head start</span>.
+            Think about this. Without the vault —
+        </p>
+        <p class="narration" style="margin-top:16px">
+            The <em>CISO</em> is telling the board that <strong>18 months of AI research is gone</strong>. The <em>CIO</em> is rebuilding an entire GPU compute platform from scratch with no ETA. And the <em>R&D leadership</em>? They're watching a <span class="stat">$2.1 billion pipeline</span> slip while competitors gain a 12-month head start.
         </p>
         <p class="narration" style="margin-top:20px">
-            With Dell Cyber Recovery — <em>minutes</em>, not months. BPX-7721 stays on track. No data loss. No regulatory finding. The board never needs to know it was that close.
+            <strong>They're all in this together</strong> — security, IT, and the business. And they all need the same answer.
+        </p>
+        <p class="narration" style="margin-top:20px">
+            With Dell Cyber Recovery — <em>minutes</em>, not months. BPX-7721 stays on track. Models recovered. Training data intact. The CISO has the forensic trail, the CIO has the infrastructure back, and R&D is running again.
         </p>
     </div>
 
@@ -941,7 +974,7 @@
             <span class="action-text">SWITCH back to Dashboard. All 7 steps green.</span>
         </div>
         <p class="narration">
-            From APT detection to full AI Factory recovery — <em>under two minutes</em>.
+            From detection to full AI Factory recovery — <em>under two minutes</em>.
         </p>
         <p class="narration" style="margin-top:20px">
             No ransom. No data loss. No FDA questions. No Phase III delay.
@@ -950,7 +983,13 @@
             Air-gapped. AI-powered. Automated.
         </p>
         <p class="narration" style="margin-top:24px">
-            That's <em>Dell Cyber Recovery</em> protecting the <em>Dell AI Factory</em> — turning a <span class="stat">billion-dollar catastrophe</span> into a <em>two-minute recovery</em>.
+            This is what <em>Zero Trust Cyber Recovery</em> delivers: <strong>peace of mind</strong> for the CISO, a <strong>proven recovery plan</strong> for the CIO, and <strong>business continuity</strong> for R&D and the lines of business.
+        </p>
+        <p class="narration" style="margin-top:20px">
+            It <em>pays for itself</em> the day you need it — and every day you sleep soundly because it's there.
+        </p>
+        <p class="narration" style="margin-top:24px">
+            The next step? <em>Let's talk about enabling this for your key business areas.</em> Whether it's production, research, or your AI investments — I'd love to understand what matters most to you and show you how we protect it.
         </p>
         <div class="action">
             <span class="action-icon">&#9209;</span>
