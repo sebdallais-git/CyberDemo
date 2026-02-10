@@ -102,14 +102,17 @@ class SnowflakeClient:
 
     async def is_available(self) -> bool:
         """Check if Snowflake is reachable."""
+        conn = None
         try:
             conn = self._connect()
             cur = conn.cursor()
             cur.execute("SELECT 1")
-            conn.close()
             return True
         except Exception:
             return False
+        finally:
+            if conn:
+                conn.close()
 
     async def swap_scenario_data(self, scenario: str) -> bool:
         """Replace SIEM table contents with scenario-specific data.
@@ -127,6 +130,7 @@ class SnowflakeClient:
             logger.warning(f"SQL file not found: {sql_path}")
             return False
 
+        conn = None
         try:
             conn = self._connect()
             cur = conn.cursor()
@@ -151,13 +155,15 @@ class SnowflakeClient:
                 cur.execute(stmt)
                 executed += 1
 
-            conn.close()
             logger.info(f"Snowflake data swapped to '{scenario}' ({executed} statements)")
             return True
 
         except Exception as e:
             logger.error(f"Snowflake data swap error: {e}")
             return False
+        finally:
+            if conn:
+                conn.close()
 
     async def run_anomaly_detection(self) -> dict:
         """Run the anomaly detection query and return structured results.
@@ -165,6 +171,7 @@ class SnowflakeClient:
         This is the "AI detection" step — queries ML anomaly scores
         correlated with endpoint and network events.
         """
+        conn = None
         try:
             conn = self._connect()
             cur = conn.cursor(snowflake.connector.DictCursor)
@@ -204,8 +211,6 @@ class SnowflakeClient:
                     "total_bytes_exfil": row["TOTAL_BYTES_EXFIL"],
                 })
 
-            conn.close()
-
             # Determine overall verdict
             max_score = max((t["threat_score"] for t in threats), default=0)
             primary_threat = threats[0] if threats else None
@@ -225,6 +230,9 @@ class SnowflakeClient:
         except Exception as e:
             logger.error(f"Snowflake anomaly detection error: {e}")
             raise
+        finally:
+            if conn:
+                conn.close()
 
 
 # Singleton

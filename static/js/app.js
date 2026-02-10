@@ -10,27 +10,27 @@
 // a "SOC alert feed" experience before recovery kicks in.
 const ATTACK_SEQUENCES = {
     ransomware: [
-        { severity: "HIGH",     system: "EMAIL-GW",       message: "Phishing payload opened by svc_scada@baselpharma.com" },
-        { severity: "HIGH",     system: "AD-DC01",        message: "Kerberoasting detected — service account credential harvested" },
-        { severity: "CRITICAL", system: "SCADA-HIST-01",  message: "LockBit 4.0 payload deployed on historian server" },
-        { severity: "CRITICAL", system: "MES-PRIMARY",    message: "Lateral movement — batch record database encrypted" },
+        { severity: "HIGH",     system: "EMAIL-GW",       message: "Phishing email opened — employee credential stolen" },
+        { severity: "HIGH",     system: "GATEWAY",        message: "Attacker inside the network — privilege escalation in progress" },
+        { severity: "CRITICAL", system: "SCADA-HIST-01",  message: "Ransomware encrypting historian server — batch records locked" },
+        { severity: "CRITICAL", system: "MES-PRIMARY",    message: "Spreading to manufacturing systems — production databases encrypted" },
         { severity: "CRITICAL", system: "LINE-B3-PLC",    message: "Production line B3 HALTED — temperature monitoring offline" },
-        { severity: "BUSINESS", system: "IMPACT",         message: "Estimated impact: $500K–$2M/day — FDA 483 risk if batch records unrecoverable" },
+        { severity: "BUSINESS", system: "IMPACT",         message: "$500K–$2M/day at risk — FDA 483 if batch records unrecoverable" },
     ],
     ai_factory: [
-        { severity: "HIGH",     system: "DATABRICKS-SP",  message: "OAuth token theft — service principal credential exfiltrated" },
-        { severity: "HIGH",     system: "UNITY-CATALOG",  message: "Unauthorized access to ML experiment metadata" },
-        { severity: "CRITICAL", system: "POWERSCALE-AI",  message: "Training data corrupted — molecular simulation poisoned" },
-        { severity: "CRITICAL", system: "MLFLOW-REG",     message: "Model artifacts encrypted on PowerScale data lake" },
-        { severity: "CRITICAL", system: "XE9680-GPU-01",  message: "GPU cluster compute jobs terminated — pipeline halted" },
+        { severity: "HIGH",     system: "ML-PLATFORM",    message: "Stolen credentials — unauthorized access to ML platform" },
+        { severity: "HIGH",     system: "DATA-CATALOG",   message: "Bulk export of experiment metadata — never seen before" },
+        { severity: "CRITICAL", system: "AI-DATA-LAKE",   message: "Training data corrupted — molecular simulation files destroyed" },
+        { severity: "CRITICAL", system: "ML-REGISTRY",    message: "Model artifacts encrypted — AI pipeline halted" },
+        { severity: "CRITICAL", system: "GPU-CLUSTER",    message: "GPU compute jobs terminated — all training stopped" },
         { severity: "BUSINESS", system: "IMPACT",         message: "Phase III candidate BPX-7721 ($2.1B pipeline) compromised" },
     ],
     data_exfil: [
-        { severity: "HIGH",     system: "DNS-PROXY",      message: "Anomalous DNS TXT queries from svc_lims_readonly (148/min)" },
-        { severity: "HIGH",     system: "LIMS-DB-01",     message: "GxP validation data accessed — bulk SELECT on batch_records" },
-        { severity: "CRITICAL", system: "ERP-CHEM",       message: "API synthesis routes exfiltrated — 2.1 GB encoded in DNS" },
-        { severity: "CRITICAL", system: "CLINICAL-DW",    message: "Patient trial data accessed — 847 subject records" },
-        { severity: "CRITICAL", system: "DNS-PROXY",      message: "Total exfiltration: 4.2 GB over 72 hours via DNS tunnel" },
+        { severity: "HIGH",     system: "DNS-PROXY",      message: "Unusual DNS traffic pattern — covert data channel suspected" },
+        { severity: "HIGH",     system: "LIMS-DB",        message: "GxP validation records accessed in bulk — off-hours activity" },
+        { severity: "CRITICAL", system: "ERP-CHEM",       message: "Proprietary synthesis routes exfiltrated — IP theft confirmed" },
+        { severity: "CRITICAL", system: "CLINICAL-DW",    message: "Patient trial data accessed — 847 subject records exposed" },
+        { severity: "CRITICAL", system: "DNS-PROXY",      message: "Total exfiltration: 4.2 GB over 72 hours via covert channel" },
         { severity: "BUSINESS", system: "IMPACT",         message: "FDA 21 CFR Part 11 violation — consent decree and $50M+ exposure" },
     ],
 };
@@ -343,6 +343,10 @@ function cyberDemo() {
 
                 case "COMPLETE":
                     this.running = false;
+                    // Show Dell closing message
+                    if (data.closing) {
+                        this.pushFeedEvent("DELL", "NEXT STEP", data.closing);
+                    }
                     break;
             }
         },
@@ -371,8 +375,12 @@ function cyberDemo() {
             return descriptions[this.scenarioType] || "";
         },
 
-        /** Push a remediation event into the attack feed during recovery. */
+        /** Push a remediation event into the attack feed during recovery.
+         *  Caps at 50 entries (FIFO) to prevent unbounded memory growth. */
         pushFeedEvent(severity, system, message) {
+            if (this.attackEvents.length >= 50) {
+                this.attackEvents.shift();
+            }
             this.attackEvents.push({
                 severity,
                 system,

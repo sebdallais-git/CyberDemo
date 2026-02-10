@@ -31,33 +31,32 @@ def get_resume_event() -> Optional[asyncio.Event]:
 # Pharma scenario definitions (reused from PharmaOpsAgent concept)
 SCENARIO_DETAILS = {
     ScenarioType.RANSOMWARE: {
-        "short_description": "CRITICAL: LockBit 4.0 ransomware on SCADA historian servers",
+        "short_description": "CRITICAL: Ransomware encrypting SCADA historian — production halted",
         "description": (
             "Ransomware detected on pharmaceutical SCADA systems. "
-            "Batch records and temperature logs encrypted on SCADA-HIST-01. "
+            "Batch records and temperature logs encrypted. "
             "Production line B3 halted. Immediate containment required."
         ),
         "priority": "1",
         "category": "Malware",
     },
     ScenarioType.AI_FACTORY: {
-        "short_description": "CRITICAL: APT compromise of AI drug discovery pipeline (Dell AI Factory)",
+        "short_description": "CRITICAL: Nation-state intrusion on AI drug discovery pipeline",
         "description": (
-            "Nation-state APT targeting R&D AI Factory. Databricks service principal compromised — "
-            "Unity Catalog credentials stolen, MLflow experiments encrypted. "
-            "Molecular simulation training data on PowerScale corrupted. "
-            "Phase III candidate BPX-7721 ($2.1B pipeline) at risk. "
-            "Dell PowerEdge XE9680 GPU cluster and PowerScale AI data lake affected."
+            "Sophisticated intrusion targeting R&D AI pipeline. "
+            "Stolen credentials used to access ML experiments and training data. "
+            "Molecular simulation data corrupted, GPU compute halted. "
+            "Phase III candidate BPX-7721 ($2.1B pipeline) at risk."
         ),
         "priority": "1",
         "category": "Intrusion",
     },
     ScenarioType.DATA_EXFIL: {
-        "short_description": "HIGH: GxP data exfiltration via DNS tunneling",
+        "short_description": "HIGH: Intellectual property exfiltration — GxP and clinical data",
         "description": (
-            "Slow exfiltration of GxP validation data and API synthesis routes "
-            "detected via DNS TXT record queries. 4.2 GB exfiltrated over 72 hours. "
-            "Insider threat suspected — compromised service account svc_lims_readonly."
+            "Slow exfiltration of GxP validation data and synthesis routes "
+            "detected via covert DNS channel. 4.2 GB exfiltrated over 72 hours. "
+            "Insider threat suspected — compromised service account."
         ),
         "priority": "2",
         "category": "Data Theft",
@@ -88,7 +87,11 @@ async def run_scenario(scenario_type: ScenarioType) -> AsyncGenerator[str, None]
     5. FORENSICS  — Extract corrupted files and attack vector
     6. RECOVER    — Initiate recovery from clean PIT copy
     7. RESOLVE    — Update ServiceNow incident to resolved
+
+    Uses try/finally to clean up the pause gate if the client disconnects
+    mid-scenario (sse-starlette calls aclose() → GeneratorExit).
     """
+    global _resume_event
     details = SCENARIO_DETAILS[scenario_type]
     incident_sys_id = None
     incident_number = "MOCK-INC-001"
@@ -170,13 +173,16 @@ async def run_scenario(scenario_type: ScenarioType) -> AsyncGenerator[str, None]
     # ── PAUSE — let presenter open ServiceNow and inspect the incident ──
     # Emit a PAUSE event so the frontend shows the "View Incident" button.
     # The orchestrator blocks here until the presenter clicks "Continue".
-    global _resume_event
+    # Wrapped in try/finally so _resume_event is cleaned up if the client
+    # disconnects while we're waiting (GeneratorExit from aclose()).
     _resume_event = asyncio.Event()
     yield _sse(2, "PAUSE", StepStatus.COMPLETE,
                "Paused — review incident in ServiceNow, then continue",
                {"incident_url": incident_url, "number": incident_number})
-    await _resume_event.wait()
-    _resume_event = None
+    try:
+        await _resume_event.wait()
+    finally:
+        _resume_event = None
 
     # ── Step 3: VAULT SYNC ──────────────────────────────────────────
     yield _sse(3, "VAULT SYNC", StepStatus.RUNNING,
@@ -334,7 +340,17 @@ async def run_scenario(scenario_type: ScenarioType) -> AsyncGenerator[str, None]
                    f"Incident {incident_number} resolved (MOCK - SN unavailable)",
                    {"number": incident_number, "state": "Resolved", "mode": "mock"})
 
-    # Final event — scenario complete
+    # Final event — scenario complete with Dell closing message
     yield _sse(7, "COMPLETE", StepStatus.COMPLETE,
-               "All systems restored. Incident closed.",
-               {"scenario": scenario_type.value, "incident": incident_number})
+               "All systems restored. Business continuity secured.",
+               {
+                   "scenario": scenario_type.value,
+                   "incident": incident_number,
+                   "closing": (
+                       "This is what Zero Trust Cyber Recovery delivers: "
+                       "peace of mind for the CISO, a proven recovery plan for the CIO, "
+                       "and business continuity for the lines of business. "
+                       "It pays for itself the day you need it — and every day you sleep soundly because it's there. "
+                       "Let's talk about enabling this for your key business areas."
+                   ),
+               })

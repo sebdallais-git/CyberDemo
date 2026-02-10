@@ -24,6 +24,8 @@ app = FastAPI(title="Dell CR Mock API v7", version="7.0.0")
 _valid_token: Optional[str] = None
 # Store the scenario type for analysis context
 _current_scenario: str = "ransomware"
+# Track the running sync task to prevent duplicates piling up
+_sync_task: Optional[asyncio.Task] = None
 
 
 def _require_auth(token: Optional[str]):
@@ -88,9 +90,12 @@ async def trigger_policy(
     policy_id: str,
     x_cr_auth_token: Optional[str] = Header(None),
 ):
+    global _sync_task
     _require_auth(x_cr_auth_token)
-    # Run sync in background so the response returns immediately
-    asyncio.create_task(vault.trigger_sync())
+    # Run sync in background so the response returns immediately.
+    # Skip if a sync is already running to prevent task pile-up.
+    if _sync_task is None or _sync_task.done():
+        _sync_task = asyncio.create_task(vault.trigger_sync())
     return {
         "policy_id": policy_id,
         "status": "STARTED",
