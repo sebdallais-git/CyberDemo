@@ -23,6 +23,10 @@ class Settings(BaseSettings):
     SNOWFLAKE_SCHEMA: str = "SIEM"
     SNOWFLAKE_WAREHOUSE: str = "CYBER_WH"
 
+    # Databricks
+    DATABRICKS_HOST: str = ""  # e.g. "dbc-9a9a2925-5ad0.cloud.databricks.com"
+    DATABRICKS_TOKEN: str = ""
+
     # App
     APP_PORT: int = 8889
 

@@ -43,8 +43,11 @@ function cyberDemo() {
         scenarioType: null,
         attackEvents: [],       // Cascaded attack + remediation indicators
         feedPhase: "attack",    // "attack" | "recovery" | "resolved" — drives panel header
-        paused: false,          // True when waiting for presenter to review ServiceNow
-        pauseIncidentUrl: "",   // ServiceNow incident URL to open during pause
+        paused: false,          // True when waiting for presenter action
+        pauseStepIndex: -1,     // Which step (0-indexed) is currently paused
+        pauseUrl: "",           // URL to open on first click (Snowflake page or ServiceNow)
+        pauseType: "",          // "snowflake" or "servicenow" — drives label text
+        databricksUrl: "",      // Optional Databricks link (ai_factory scenario only)
 
         // Step definitions (labels shown in the timeline)
         stepDefs: [
@@ -90,6 +93,16 @@ function cyberDemo() {
             pit_id: "",
             restored_files: 0,
             progress: 0,
+        },
+
+        // AI Factory metrics (GPU + model lineage — only used in ai_factory scenario)
+        aiFactory: {
+            status: "ONLINE",          // ONLINE → HALTED → RECOVERING → ONLINE
+            gpuUtil: 85,               // 85% → 0% → 85%
+            trainingJobs: 12,          // 12 → 0 → 12
+            vramTB: 2.35,              // 2.35 → 0 → 2.35
+            experimentsAffected: 2847, // count of encrypted experiments
+            modelsAtRisk: 142,         // models at risk
         },
 
         // Snowflake AI detection results
@@ -154,12 +167,16 @@ function cyberDemo() {
             this.attackEvents = [];
             this.feedPhase = "attack";
             this.paused = false;
-            this.pauseIncidentUrl = "";
+            this.pauseStepIndex = -1;
+            this.pauseUrl = "";
+            this.pauseType = "";
+            this.databricksUrl = "";
             this.vaultState = "IDLE";
             this.incident = { number: "", sys_id: "", url: "", state: "", mode: "", priority: "", category: "", description: "" };
             this.forensics = { confidence: 0, corrupted_count: 0, attack_vector: "", family: "", clean_pit: "", affected_systems: [] };
             this.recovery = { pit_id: "", restored_files: 0, progress: 0 };
             this.snowflakeDetection = { threat_score: 0, threat_count: 0, primary_host: "", summary: {}, threats: [], model_version: "" };
+            this.aiFactory = { status: "ONLINE", gpuUtil: 85, trainingJobs: 12, vramTB: 2.35, experimentsAffected: 2847, modelsAtRisk: 142 };
 
             // Cascade attack events with staggered delays (plays during DETECT phase)
             const sequence = ATTACK_SEQUENCES[type] || [];
@@ -260,6 +277,10 @@ function cyberDemo() {
                                 model_version: data.model_version || "",
                             };
                         }
+                        // AI Factory: GPU metrics crash to zero during attack
+                        if (this.scenarioType === "ai_factory") {
+                            this.aiFactory = { ...this.aiFactory, status: "HALTED", gpuUtil: 0, trainingJobs: 0, vramTB: 0 };
+                        }
                     }
                     break;
 
@@ -316,6 +337,10 @@ function cyberDemo() {
                         this.recovery.pit_id = data.pit_id || "";
                         this.recovery.progress = 50;
                         this.pushFeedEvent("RECOVERY", "RESTORE", "Restoring from clean PIT copy " + (data.pit_id || ""));
+                        // AI Factory: begin recovery animation
+                        if (this.scenarioType === "ai_factory") {
+                            this.aiFactory = { ...this.aiFactory, status: "RECOVERING", gpuUtil: 40, trainingJobs: 5, vramTB: 1.1 };
+                        }
                     } else if (event.status === "complete") {
                         this.vaultState = "RECOVERED";
                         this.recovery.pit_id = data.pit_id || "";
@@ -323,6 +348,10 @@ function cyberDemo() {
                         this.recovery.progress = 100;
                         this.pushFeedEvent("RESOLVED", "RESTORE",
                             "Recovery complete — " + (data.restored_files || 0) + " files restored from clean copy");
+                        // AI Factory: fully restored
+                        if (this.scenarioType === "ai_factory") {
+                            this.aiFactory = { ...this.aiFactory, status: "ONLINE", gpuUtil: 85, trainingJobs: 12, vramTB: 2.35 };
+                        }
                     }
                     break;
 
@@ -336,9 +365,12 @@ function cyberDemo() {
                     break;
 
                 case "PAUSE":
-                    // Presenter pause — show "View Incident" / "Continue" button
+                    // Presenter pause — can happen after any step
                     this.paused = true;
-                    this.pauseIncidentUrl = data.incident_url || "";
+                    this.pauseStepIndex = event.step - 1; // 0-indexed
+                    this.pauseUrl = data.pause_url || "";
+                    this.pauseType = data.pause_type || "";
+                    this.databricksUrl = data.databricks_url || "";
                     break;
 
                 case "COMPLETE":
@@ -351,17 +383,26 @@ function cyberDemo() {
             }
         },
 
-        /** Open ServiceNow incident in new tab, then resume the scenario. */
+        /** Open the pause target in a new tab, then resume the scenario.
+         *  Click sequence: open primary URL → open Databricks (if present) → resume. */
         async handlePauseAction() {
-            if (this.pauseIncidentUrl) {
-                // First click: open ServiceNow
-                window.open(this.pauseIncidentUrl, '_blank');
-                // Clear the URL so next click triggers resume
-                this.pauseIncidentUrl = "";
+            if (this.pauseUrl) {
+                window.open(this.pauseUrl, '_blank');
+                this.pauseUrl = "";
             } else {
-                // Second click: tell the backend to continue
+                // Resume the workflow
                 this.paused = false;
+                this.pauseStepIndex = -1;
+                this.pauseType = "";
+                this.databricksUrl = "";
                 await fetch("/api/scenario/resume", { method: "POST" });
+            }
+        },
+
+        /** Open the Databricks workspace in a new tab (separate button). */
+        openDatabricks() {
+            if (this.databricksUrl) {
+                window.open(this.databricksUrl, '_blank');
             }
         },
 

@@ -132,8 +132,22 @@ async def run_scenario(scenario_type: ScenarioType) -> AsyncGenerator[str, None]
                    {"category": details["category"], "priority": details["priority"],
                     "source": "fallback"})
 
-    # Narrative beat — let presenter narrate Snowflake results
-    await asyncio.sleep(4.0)
+    # ── PAUSE — let presenter open real Snowflake worksheets in a new tab ──
+    # Account ID format: "org-acct" → URL: https://app.snowflake.com/org/acct/#/worksheets
+    _resume_event = asyncio.Event()
+    sf_acct = settings.SNOWFLAKE_ACCOUNT
+    sf_url = f"https://app.snowflake.com/{sf_acct.replace('-', '/')}/#/worksheets" if sf_acct else "/snowflake"
+    pause_data = {"pause_type": "snowflake", "pause_url": sf_url}
+    # AI Factory scenario: also link to Databricks workspace so presenter can show the damage
+    if scenario_type == ScenarioType.AI_FACTORY and settings.DATABRICKS_HOST:
+        pause_data["databricks_url"] = f"https://{settings.DATABRICKS_HOST}/#workspace/Shared/BaselPharma-RD/BPX-7721_Training_Pipeline"
+    yield _sse(1, "PAUSE", StepStatus.COMPLETE,
+               "Paused — view Snowflake threat analysis, then continue",
+               pause_data)
+    try:
+        await _resume_event.wait()
+    finally:
+        _resume_event = None
 
     # ── Step 2: INCIDENT ────────────────────────────────────────────
     yield _sse(2, "INCIDENT", StepStatus.RUNNING, "Creating ServiceNow Security Incident...")
@@ -178,7 +192,8 @@ async def run_scenario(scenario_type: ScenarioType) -> AsyncGenerator[str, None]
     _resume_event = asyncio.Event()
     yield _sse(2, "PAUSE", StepStatus.COMPLETE,
                "Paused — review incident in ServiceNow, then continue",
-               {"incident_url": incident_url, "number": incident_number})
+               {"pause_type": "servicenow", "pause_url": incident_url,
+                "number": incident_number})
     try:
         await _resume_event.wait()
     finally:
