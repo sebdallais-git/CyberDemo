@@ -4,13 +4,15 @@
 
 ### Automated Cyber Recovery for Pharmaceutical Manufacturing
 
-**Snowflake AI Detection** | **ServiceNow Incident Orchestration** | **Dell Cyber Recovery**
+**Snowflake AI Detection** | **ServiceNow Incident Orchestration** | **Dell Cyber Recovery** | **Claude AI Agents**
 
 [![Python](https://img.shields.io/badge/Python-3.11+-3776AB?logo=python&logoColor=white)](https://python.org)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.110+-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
 [![Snowflake](https://img.shields.io/badge/Snowflake-AI%20SIEM-29B5E8?logo=snowflake&logoColor=white)](https://snowflake.com)
 [![ServiceNow](https://img.shields.io/badge/ServiceNow-ITSM%20API-62D84E?logo=servicenow&logoColor=white)](https://servicenow.com)
 [![Dell](https://img.shields.io/badge/Dell-Cyber%20Recovery-007DB8?logo=dell&logoColor=white)](https://dell.com/en-us/lp/dt/cyber-resilience-solutions)
+[![Anthropic](https://img.shields.io/badge/Claude-AI%20Agents-D4A574?logo=anthropic&logoColor=white)](https://anthropic.com)
+[![Databricks](https://img.shields.io/badge/Databricks-Unity%20Catalog-FF3621?logo=databricks&logoColor=white)](https://databricks.com)
 
 ---
 
@@ -26,7 +28,9 @@
 
 Most cyber recovery demos are slide decks. This one is **real**.
 
-CyberDemo connects to **live Snowflake**, **live ServiceNow**, and **Dell Cyber Recovery APIs** to execute a complete detection-to-recovery workflow against a realistic pharma OT environment — SCADA historians, MES systems, and GxP-regulated data.
+CyberDemo connects to **live Snowflake**, **live ServiceNow**, **Dell Cyber Recovery APIs**, and **Databricks Unity Catalog** to execute a complete detection-to-recovery workflow against a realistic pharma OT environment — SCADA historians, MES systems, AI/ML pipelines, and GxP-regulated data.
+
+It also features **5 Claude-powered AI agents** that assist with live demo delivery, scenario generation, documentation, customer evaluation, and competitive intelligence.
 
 ---
 
@@ -71,6 +75,12 @@ graph TB
         SW["Dell S5248F-ON<br/><i>25GbE Microsegmentation</i>"]
     end
 
+    subgraph AI["AI Factory — GPU + Storage"]
+        GPU["Dell PowerEdge XE9680<br/><i>8× H100 GPU Training</i>"]
+        PFLEX["Dell PowerFlex<br/><i>Software-Defined Storage</i>"]
+        DBX["Databricks Unity Catalog<br/><i>MLflow + Experiments</i>"]
+    end
+
     subgraph IT["IT Data Center — Purdue L4-5"]
         PPDM["Dell PowerProtect Data Manager"]
         DD["Dell PowerProtect DD9400"]
@@ -90,6 +100,9 @@ graph TB
     PI1 -->|PI Replication| PI2
     PI1 -->|SMB/NFS| PS
     PS -->|HTTPS| DD
+    GPU -->|NVMe-oF| PFLEX
+    PFLEX -->|HTTPS| DD
+    DBX -.->|Unity API| GPU
     DD -->|DD MTree Repl.| CR
     SF -.->|REST API| PI1
     SN -.->|Incident API| PPDM
@@ -99,6 +112,7 @@ graph TB
     style PLT fill:#064e3b,stroke:#22c55e,color:#fff
     style OT fill:#1e3a5f,stroke:#3b82f6,color:#fff
     style DMZ fill:#78350f,stroke:#f59e0b,color:#fff
+    style AI fill:#3b1f6e,stroke:#a78bfa,color:#fff
     style IT fill:#312e81,stroke:#6366f1,color:#fff
     style VAULT fill:#7f1d1d,stroke:#ef4444,color:#fff
 ```
@@ -191,9 +205,20 @@ erDiagram
         VARCHAR model_version
         VARIANT contributing_factors
     }
+    DATABRICKS_API_EVENTS {
+        TIMESTAMP event_time
+        VARCHAR service_principal
+        VARCHAR api_endpoint
+        VARCHAR http_method
+        INT status_code
+        BIGINT response_bytes
+        VARCHAR source_ip
+        BOOLEAN is_anomalous
+    }
 
     NETWORK_EVENTS ||--o{ ANOMALY_SCORES : "correlated by IP/host"
     ENDPOINT_EVENTS ||--o{ ANOMALY_SCORES : "correlated by hostname"
+    DATABRICKS_API_EVENTS ||--o{ ANOMALY_SCORES : "correlated by host/IP"
 ```
 
 ### Detection Query
@@ -286,22 +311,60 @@ graph LR
 
 ---
 
+## AI Agents
+
+CyberDemo includes **5 Claude-powered AI agents** that enhance demo preparation, delivery, and follow-up. Each agent runs as an SSE-streamed conversation powered by the Anthropic API.
+
+```mermaid
+graph LR
+    subgraph AGENTS["Claude AI Agents"]
+        DIR["Director<br/><i>Live presenter cues</i>"]
+        SCN["Scenarist<br/><i>Scenario generation</i>"]
+        DOC["Documentalist<br/><i>Documentation gen</i>"]
+        CUS["Customer<br/><i>CxO evaluation</i>"]
+        REC["Recruiter<br/><i>Competitive intel</i>"]
+    end
+
+    DIR -->|SSE| DASH["Dashboard"]
+    SCN -->|Artifacts| FS["Scenario Files"]
+    DOC -->|Reports| FS
+    CUS -->|Evaluations| FS
+    REC -->|Reports| FS
+
+    style AGENTS fill:#1a1a2e,stroke:#a78bfa,color:#fff
+```
+
+| Agent | Purpose | Tools |
+|-------|---------|-------|
+| **Director** | Real-time presenter coaching during live demos. Subscribes to orchestrator events and provides talking points, next cues, and timing guidance. Uses a playbook for known scenarios (0ms latency) with LLM fallback for edge cases. | Event bus |
+| **Scenarist** | Generates complete scenario packages from news or curated input. Two-phase workflow: analyze sources and propose, then generate 6 artifacts (Snowflake SQL, ServiceNow data, attack feed, CyberSense mock, teleprompter script, business impact). | Web search, URL fetch, scenario reader, file writer |
+| **Documentalist** | Reads the codebase and generates documentation — architecture guides, API references, or scenario walkthroughs. | Codebase reader, file writer |
+| **Customer** | Evaluates the demo from 4 CxO perspectives (CIO, CFO, R&D Head, MFG Head). Each persona assesses the demo through their specific lens — ROI, compliance, IP protection, production uptime. | Scenario reader |
+| **Recruiter** | Competitive intelligence — researches partner/competitor companies and generates positioning reports. | Web search, URL fetch, file writer |
+
+---
+
 ## IT/OT Infrastructure
 
 CyberDemo includes an **interactive infrastructure diagram** showing the complete BaselPharma OT/IT stack built on Dell Technologies.
 
 ```
-┌──────────────┐    ┌────────────────┐    ┌──────────────┐    ┌────────────────┐   ║         ║   ┌─────────────────┐
-│  PLANT FLOOR │    │ OT DATA CENTER │    │  IT/OT DMZ   │    │ IT DATA CENTER │   ║ AIR GAP ║   │  CYBER VAULT    │
-│  Purdue L0-1 │───▶│  Purdue L2-3   │───▶│  Purdue L3.5 │───▶│  Purdue L4-5   │══▶║         ║══▶│  Isolated       │
-│              │    │                │    │              │    │                │   ║         ║   │                 │
-│ NativeEdge   │    │ PowerEdge R760 │    │ PowerScale   │    │ PPDM           │   ║         ║   │ Cyber Recovery  │
-│ XR4000       │    │ PowerEdge R660 │    │ F710 OneFS   │    │ DD9400         │   ║         ║   │ CyberSense      │
-│ DeltaV DCS   │    │ AVEVA PI       │    │ S5248F-ON    │    │ Snowflake (SaaS)│  ║         ║   │ DD9400 Vault    │
-│ Instruments  │    │                │    │              │    │ ServiceNow(SaaS)│  ║         ║   │                 │
-└──────────────┘    └────────────────┘    └──────────────┘    └────────────────┘   ║         ║   └─────────────────┘
-                                                                                   ║         ║
-                                                                                   Lock icon
+┌──────────────┐   ┌────────────────┐   ┌──────────────┐   ┌────────────────┐  ║         ║  ┌─────────────────┐
+│  PLANT FLOOR │   │ OT DATA CENTER │   │  IT/OT DMZ   │   │ IT DATA CENTER │  ║ AIR GAP ║  │  CYBER VAULT    │
+│  Purdue L0-1 │──▶│  Purdue L2-3   │──▶│  Purdue L3.5 │──▶│  Purdue L4-5   │═▶║         ║═▶│  Isolated       │
+│              │   │                │   │              │   │                │  ║         ║  │                 │
+│ NativeEdge   │   │ PowerEdge R760 │   │ PowerScale   │   │ PPDM           │  ║         ║  │ Cyber Recovery  │
+│ XR4000       │   │ PowerEdge R660 │   │ F710 OneFS   │   │ DD9400         │  ║         ║  │ CyberSense      │
+│ DeltaV DCS   │   │ AVEVA PI       │   │ S5248F-ON    │   │ Snowflake(SaaS)│  ║         ║  │ DD9400 Vault    │
+│ Instruments  │   │                │   │              │   │ ServiceNow     │  ║         ║  │                 │
+└──────────────┘   └────────────────┘   └──────────────┘   └────────────────┘  ║         ║  └─────────────────┘
+                                                                  │             ║         ║
+                                                           ┌──────┴─────────┐   ║         ║
+                                                           │  AI FACTORY    │   ║         ║
+                                                           │  XE9680 (GPU)  │═══╝         ║
+                                                           │  PowerFlex     │             ║
+                                                           │  Databricks    │             ║
+                                                           └────────────────┘
 ```
 
 **Features:**
@@ -345,12 +408,16 @@ CyberDemo includes an **interactive infrastructure diagram** showing the complet
 |-------|-----------|---------|
 | **Backend** | Python 3.11+ / FastAPI | API server, SSE streaming, orchestration |
 | **Frontend** | Alpine.js / Tailwind CSS / HTMX | Reactive dashboard, real-time updates |
+| **AI Agents** | Anthropic Claude API | 5 agents — Director, Scenarist, Documentalist, Customer, Recruiter |
 | **AI Detection** | Snowflake (CYBER_SECURITY DB) | SIEM telemetry, ML anomaly scoring |
+| **AI Factory** | Databricks Unity Catalog | MLflow experiments, model registry, API event telemetry |
 | **Incident Mgmt** | ServiceNow (Table API) | Automated P1 incident lifecycle |
 | **Cyber Recovery** | Dell CR API v7 / CyberSense | Air-gapped vault, ML forensics |
 | **Data Protection** | Dell PowerProtect DD | Dedup backup, MTree replication |
+| **GPU Storage** | Dell PowerFlex | Software-defined block storage for GPU checkpoint I/O |
 | **OT/IT Storage** | Dell PowerScale OneFS | Multiprotocol convergence layer |
 | **Edge Compute** | Dell NativeEdge | Plant floor containerized workloads |
+| **Web Search** | Brave Search API | Scenarist agent — real-time news research |
 | **Streaming** | Server-Sent Events (SSE) | Real-time step-by-step UI updates |
 
 ---
@@ -389,6 +456,11 @@ python -m app.main
 | `SNOW_USER` / `SNOW_PASSWORD` | ServiceNow API credentials |
 | `DELLCR_MODE` | `mock` or `live` |
 | `DELLCR_BASE_URL` | Dell CR API endpoint |
+| `DATABRICKS_HOST` | Databricks workspace host (e.g., `dbc-xxx.cloud.databricks.com`) |
+| `DATABRICKS_TOKEN` | Databricks personal access token |
+| `ANTHROPIC_API_KEY` | Anthropic API key (required for AI Agents) |
+| `ANTHROPIC_MODEL` | Claude model ID (default: `claude-sonnet-4-5-20250929`) |
+| `BRAVE_API_KEY` | Brave Search API key (used by Scenarist agent) |
 | `APP_PORT` | Dashboard port (default: 8889) |
 
 ---
@@ -397,12 +469,19 @@ python -m app.main
 
 | Route | Description |
 |-------|-------------|
-| `/` | Main dashboard — scenario triggers, live timeline, detection panels |
+| `/` | Main dashboard — scenario triggers, live timeline, detection panels, Director toggle |
 | `/infrastructure` | Interactive OT/IT infrastructure map (Purdue Model) |
+| `/infrastructure/ai` | AI Factory infrastructure map — GPU cluster, PowerFlex, Databricks |
 | `/infrastructure?state=attacked` | Infrastructure with LockBit kill chain visualization |
+| `/snowflake` | Snowflake SIEM worksheet — raw data tables for CxO deep-dive |
+| `/agents` | AI Agent hub — launch and monitor all 5 agents |
+| `/agents/scenarist` | Scenarist agent — generate new scenarios from news or curated input |
+| `/agents/documentalist` | Documentalist agent — generate architecture docs and guides |
+| `/agents/customer` | Customer evaluator — CxO persona-based demo assessment |
+| `/agents/recruiter` | Recruiter agent — competitive intelligence reports |
 | `/teleprompter` | Auto-scrolling teleprompter for demo video recording |
 | `/health` | Health check endpoint |
-| `/api/status` | Connectivity status for all three platforms |
+| `/api/status` | Connectivity status for all platforms |
 
 ---
 
@@ -435,21 +514,64 @@ CyberDemo/
 │   ├── snowflake_client.py     # Snowflake anomaly detection queries
 │   ├── servicenow_client.py    # ServiceNow Table API client
 │   ├── dellcr_client.py        # Dell CR REST API v7 client
+│   ├── agent_routes.py         # AI Agent API endpoints + page routes
+│   ├── events.py               # Internal event bus (pub/sub for Director)
 │   ├── config.py               # Environment configuration
 │   └── models.py               # Pydantic models (SSE events, requests)
+├── agents/
+│   ├── base.py                 # Abstract base agent class
+│   ├── claude_client.py        # Anthropic API client + agentic tool loop
+│   ├── director/               # Live presenter coaching agent
+│   │   ├── agent.py            # Event bus subscriber + cue generator
+│   │   └── playbook.py         # Pre-written cues per scenario/step
+│   ├── scenarist/              # Scenario generation agent
+│   │   ├── agent.py            # Two-phase: analyze → generate
+│   │   ├── cli.py              # CLI interface
+│   │   └── scenario_package.py # Artifact definitions
+│   ├── documentalist/          # Documentation generation agent
+│   ├── customer/               # CxO persona evaluator agent
+│   │   ├── agent.py
+│   │   └── personas.py         # CIO, CFO, R&D Head, MFG Head definitions
+│   ├── recruiter/              # Competitive intelligence agent
+│   │   ├── agent.py
+│   │   └── companies.py        # Target company profiles
+│   ├── prompts/                # System prompts for each agent
+│   └── tools/                  # Shared tool implementations
+│       ├── web_search.py       # Brave Search API integration
+│       ├── codebase_reader.py  # Read project source files
+│       ├── scenario_reader.py  # Read existing scenario data
+│       ├── file_writer.py      # Write output artifacts
+│       └── git_ops.py          # Git operations
 ├── mock_dellcr/
 │   ├── server.py               # Mock Dell CR API server
 │   ├── vault.py                # Vault state machine
 │   ├── cybersense.py           # Mock CyberSense analysis
 │   └── data.py                 # Pharma-specific mock data
+├── scripts/
+│   ├── setup_snowflake.py      # Snowflake schema + data loader
+│   ├── snowflake_schema.sql    # Table definitions (incl. DATABRICKS_API_EVENTS)
+│   ├── snowflake_ransomware.sql    # Ransomware scenario SIEM data
+│   └── snowflake_ai_factory.sql    # AI Factory scenario SIEM data
 ├── templates/
-│   ├── dashboard.html          # Main dashboard
-│   ├── infrastructure.html     # Interactive infra diagram + attack viz
+│   ├── dashboard.html          # Main dashboard + Director toggle
+│   ├── infrastructure.html     # OT/IT infrastructure map + attack viz
+│   ├── infrastructure_ai.html  # AI Factory infrastructure map
+│   ├── snowflake.html          # Snowflake SIEM raw data worksheet
 │   ├── teleprompter.html       # Dual-script auto-scroll prompter
 │   ├── base.html               # Layout template
-│   └── partials/               # Timeline, panels, cards
+│   ├── agents/                 # Agent UI pages
+│   │   ├── hub.html            # Agent hub — launch all agents
+│   │   ├── scenarist.html      # Scenarist two-phase UI
+│   │   ├── documentalist.html  # Documentation generator UI
+│   │   ├── customer.html       # CxO evaluator UI
+│   │   └── recruiter.html      # Competitive intel UI
+│   └── partials/               # Reusable template fragments
+│       ├── ai_impact_panel.html    # AI Factory impact visualization
+│       ├── director_panel.html     # Presenter cue side panel
+│       └── ...                     # Timeline, Snowflake panel, cards
 ├── static/
 │   ├── js/app.js               # Alpine.js dashboard component
+│   ├── js/agents.js            # Agent UI logic + Director mixin
 │   └── css/custom.css          # Animations and custom styles
 ├── .env.example                # Environment template
 ├── requirements.txt
@@ -462,6 +584,6 @@ CyberDemo/
 
 **Built in Basel for the pharma industry.**
 
-*Snowflake AI Detection* · *ServiceNow Orchestration* · *Dell Cyber Recovery*
+*Snowflake AI Detection* · *ServiceNow Orchestration* · *Dell Cyber Recovery* · *Claude AI Agents*
 
 </div>
