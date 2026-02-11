@@ -13,6 +13,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from sse_starlette.sse import EventSourceResponse
 
+from app.agent_routes import agent_router, page_router
 from app.config import settings
 from app.models import ScenarioRequest
 from app.orchestrator import run_scenario
@@ -30,6 +31,10 @@ app = FastAPI(
 
 app.mount("/static", StaticFiles(directory=BASE_DIR / "static"), name="static")
 templates = Jinja2Templates(directory=BASE_DIR / "templates")
+
+# Agent routes (optional — remove these two lines and the demo works unchanged)
+app.include_router(agent_router)
+app.include_router(page_router)
 
 
 # ── Pages ────────────────────────────────────────────────────────────
@@ -58,6 +63,11 @@ async def infrastructure_ai(request: Request):
     return templates.TemplateResponse("infrastructure_ai.html", {"request": request})
 
 
+@app.get("/snowflake", response_class=HTMLResponse)
+async def snowflake_worksheet(request: Request):
+    return templates.TemplateResponse("snowflake.html", {"request": request})
+
+
 # ── API ──────────────────────────────────────────────────────────────
 
 @app.post("/api/scenario")
@@ -75,6 +85,19 @@ async def resume_scenario():
         event.set()
         return {"status": "resumed"}
     return {"status": "not_paused"}
+
+
+@app.get("/api/snowflake/data")
+async def snowflake_data():
+    """Return raw SIEM table data for the Snowflake worksheet page."""
+    from app.snowflake_client import snowflake_client
+    try:
+        data = await snowflake_client.get_siem_data()
+        return data
+    except Exception as e:
+        logger.error(f"Snowflake data endpoint error: {e}")
+        return {"error": str(e), "anomaly_scores": [], "endpoint_events": [],
+                "network_events": [], "detection_results": []}
 
 
 @app.get("/api/status")

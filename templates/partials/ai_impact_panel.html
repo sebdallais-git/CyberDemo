@@ -1,0 +1,157 @@
+<!-- AI Factory Impact Panel — only visible during ai_factory scenario.
+     Shows GPU utilization crash, training status, and AI model lineage risk.
+     Metrics animate during DETECT (crash) and RECOVER (restore). -->
+
+<div x-show="scenarioType === 'ai_factory'" x-transition class="rounded-xl border border-purple-900/50 bg-gray-900/50 overflow-hidden">
+
+    <!-- Header -->
+    <div class="flex items-center justify-between px-5 py-3 border-b border-purple-900/30 bg-purple-950/20">
+        <div class="flex items-center gap-2">
+            <svg class="w-4 h-4 text-purple-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+                <rect x="4" y="4" width="16" height="16" rx="2"/>
+                <path d="M9 9h6v6H9z"/><circle cx="9" cy="9" r="1"/><circle cx="15" cy="9" r="1"/>
+                <circle cx="9" cy="15" r="1"/><circle cx="15" cy="15" r="1"/>
+            </svg>
+            <span class="text-sm font-bold text-purple-400">AI Factory Status</span>
+        </div>
+        <span class="text-xs font-bold px-2 py-0.5 rounded-full"
+              :class="{
+                  'bg-emerald-500/20 text-emerald-400': aiFactory.status === 'ONLINE',
+                  'bg-red-500/20 text-red-400': aiFactory.status === 'HALTED',
+                  'bg-amber-500/20 text-amber-400': aiFactory.status === 'RECOVERING',
+              }"
+              x-text="aiFactory.status"></span>
+    </div>
+
+    <!-- Metrics grid -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-px bg-gray-800/30">
+
+        <!-- GPU Utilization -->
+        <div class="p-4 bg-gray-900/70">
+            <div class="text-[10px] text-gray-500 uppercase tracking-wider mb-2">GPU Utilization</div>
+            <div class="text-2xl font-bold mb-2"
+                 :class="{
+                     'text-emerald-400': aiFactory.gpuUtil > 50,
+                     'text-red-400': aiFactory.gpuUtil === 0 && aiFactory.status === 'HALTED',
+                     'text-amber-400': aiFactory.status === 'RECOVERING',
+                 }">
+                <span x-text="aiFactory.gpuUtil"></span><span class="text-sm">%</span>
+            </div>
+            <!-- GPU bar -->
+            <div class="w-full h-2 bg-gray-800 rounded-full overflow-hidden">
+                <div class="h-full rounded-full transition-all duration-1000"
+                     :class="{
+                         'bg-emerald-500': aiFactory.gpuUtil > 50,
+                         'bg-red-500': aiFactory.gpuUtil === 0 && aiFactory.status === 'HALTED',
+                         'bg-amber-500': aiFactory.status === 'RECOVERING',
+                     }"
+                     :style="'width:' + aiFactory.gpuUtil + '%'"></div>
+            </div>
+            <div class="text-[10px] text-gray-600 mt-1">32x H100 — XE9680 Cluster</div>
+        </div>
+
+        <!-- Active Training Jobs -->
+        <div class="p-4 bg-gray-900/70">
+            <div class="text-[10px] text-gray-500 uppercase tracking-wider mb-2">Training Jobs</div>
+            <div class="text-2xl font-bold"
+                 :class="{
+                     'text-blue-400': aiFactory.trainingJobs > 0,
+                     'text-red-400': aiFactory.trainingJobs === 0 && aiFactory.status === 'HALTED',
+                     'text-amber-400': aiFactory.status === 'RECOVERING',
+                 }"
+                 x-text="aiFactory.trainingJobs"></div>
+            <div class="text-[10px] text-gray-600 mt-1">Active / scheduled</div>
+        </div>
+
+        <!-- VRAM Allocated -->
+        <div class="p-4 bg-gray-900/70">
+            <div class="text-[10px] text-gray-500 uppercase tracking-wider mb-2">VRAM Allocated</div>
+            <div class="text-2xl font-bold"
+                 :class="{
+                     'text-purple-400': aiFactory.vramTB > 0,
+                     'text-red-400': aiFactory.vramTB === 0 && aiFactory.status === 'HALTED',
+                     'text-amber-400': aiFactory.status === 'RECOVERING',
+                 }">
+                <span x-text="aiFactory.vramTB"></span><span class="text-sm"> TB</span>
+            </div>
+            <div class="text-[10px] text-gray-600 mt-1">2.56 TB total cluster VRAM</div>
+        </div>
+
+        <!-- Pipeline Value -->
+        <div class="p-4 bg-gray-900/70">
+            <div class="text-[10px] text-gray-500 uppercase tracking-wider mb-2">Pipeline Value</div>
+            <div class="text-2xl font-bold text-amber-400">$2.1<span class="text-sm">B</span></div>
+            <div class="text-[10px] text-gray-600 mt-1">BPX-7721 Phase III</div>
+        </div>
+    </div>
+
+    <!-- AI Model Lineage Impact (bottom row) -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-px bg-gray-800/30 border-t border-gray-800/50">
+
+        <!-- MLflow Experiments -->
+        <div class="p-4 bg-gray-900/70">
+            <div class="text-[10px] text-gray-500 uppercase tracking-wider mb-2">MLflow Experiments</div>
+            <div class="flex items-baseline gap-1">
+                <span class="text-xl font-bold"
+                      :class="aiFactory.status === 'HALTED' ? 'text-red-400' : 'text-emerald-400'"
+                      x-text="aiFactory.experimentsAffected.toLocaleString()"></span>
+                <span class="text-[10px] font-bold"
+                      :class="aiFactory.status === 'HALTED' ? 'text-red-500' : 'text-emerald-500'"
+                      x-text="aiFactory.status === 'HALTED' ? 'ENCRYPTED' : aiFactory.status === 'RECOVERING' ? 'RESTORING' : aiFactory.status === 'ONLINE' && currentStep > 0 ? 'RECOVERED' : 'ACTIVE'"></span>
+            </div>
+            <div class="text-[10px] text-gray-600 mt-1">18 months of research</div>
+        </div>
+
+        <!-- Models at Risk -->
+        <div class="p-4 bg-gray-900/70">
+            <div class="text-[10px] text-gray-500 uppercase tracking-wider mb-2">Models at Risk</div>
+            <div class="flex items-baseline gap-1">
+                <span class="text-xl font-bold"
+                      :class="aiFactory.status === 'HALTED' ? 'text-red-400' : 'text-emerald-400'"
+                      x-text="aiFactory.modelsAtRisk"></span>
+                <span class="text-[10px] text-red-500 font-bold"
+                      x-show="aiFactory.status === 'HALTED'">AT RISK</span>
+                <span class="text-[10px] text-emerald-500 font-bold"
+                      x-show="aiFactory.status !== 'HALTED' && currentStep > 0">SAFE</span>
+            </div>
+            <div class="text-[10px] text-amber-500/80 mt-1 font-semibold"
+                 x-show="aiFactory.status === 'HALTED'">incl. BPX-7721 v142</div>
+            <div class="text-[10px] text-gray-600 mt-1"
+                 x-show="aiFactory.status !== 'HALTED'">incl. BPX-7721 v142</div>
+        </div>
+
+        <!-- Training Data -->
+        <div class="p-4 bg-gray-900/70">
+            <div class="text-[10px] text-gray-500 uppercase tracking-wider mb-2">Training Data</div>
+            <div class="flex items-baseline gap-1">
+                <span class="text-xl font-bold"
+                      :class="aiFactory.status === 'HALTED' ? 'text-red-400' : 'text-emerald-400'">2.1</span>
+                <span class="text-sm font-bold"
+                      :class="aiFactory.status === 'HALTED' ? 'text-red-400' : 'text-emerald-400'">TB</span>
+                <span class="text-[10px] font-bold"
+                      :class="aiFactory.status === 'HALTED' ? 'text-red-500' : 'text-emerald-500'"
+                      x-text="aiFactory.status === 'HALTED' ? 'DESTROYED' : aiFactory.status === 'RECOVERING' ? 'RESTORING' : aiFactory.status === 'ONLINE' && currentStep > 0 ? 'RESTORED' : ''"></span>
+            </div>
+            <div class="text-[10px] text-gray-600 mt-1"
+                 x-text="aiFactory.status === 'HALTED' ? 'Encrypted in 47 seconds' : 'Molecular sims + genomics'"></div>
+        </div>
+
+        <!-- Status summary -->
+        <div class="p-4 bg-gray-900/70">
+            <div class="text-[10px] text-gray-500 uppercase tracking-wider mb-2">Recovery</div>
+            <div x-show="aiFactory.status === 'ONLINE' && currentStep === 0" class="text-sm text-emerald-400 font-semibold">All Systems Normal</div>
+            <div x-show="aiFactory.status === 'HALTED'" class="text-sm text-red-400 font-semibold">
+                AI Pipeline Down
+                <div class="text-[10px] text-red-500/70 mt-1">$500K/day burn continues</div>
+            </div>
+            <div x-show="aiFactory.status === 'RECOVERING'" class="text-sm text-amber-400 font-semibold">
+                Dell CR Restoring
+                <div class="text-[10px] text-amber-500/70 mt-1">From clean vault copy</div>
+            </div>
+            <div x-show="aiFactory.status === 'ONLINE' && currentStep > 0" class="text-sm text-emerald-400 font-semibold">
+                Fully Recovered
+                <div class="text-[10px] text-emerald-500/70 mt-1">BPX-7721 training resumed</div>
+            </div>
+        </div>
+    </div>
+</div>

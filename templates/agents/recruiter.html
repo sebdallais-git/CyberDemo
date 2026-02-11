@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}Recruiter{% endblock %}
+
+{% block content %}
+<div x-data="recruiterForm()">
+
+    <!-- Nav -->
+    <div class="flex items-center gap-3 mb-6">
+        <a href="/agents"
+           class="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold text-gray-400 border border-gray-800 rounded-lg bg-gray-900/50 hover:bg-gray-800/50 hover:border-gray-600 hover:text-gray-200 transition-all">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+                <path d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18"/>
+            </svg>
+            Agents
+        </a>
+    </div>
+
+    <!-- Header -->
+    <div class="mb-6">
+        <h2 class="text-xl font-bold text-white mb-1">Recruiter</h2>
+        <p class="text-sm text-gray-400">Simulate talent scout interviews and generate fit reports.</p>
+    </div>
+
+    <!-- Company -->
+    <div class="mb-4">
+        <label class="block text-xs font-semibold text-gray-400 mb-1">Company</label>
+        <div class="grid grid-cols-3 gap-2">
+            <button @click="company = 'snowflake'" :class="company === 'snowflake' ? 'bg-purple-900/30 border-purple-500/50 text-purple-300' : 'border-gray-800 text-gray-400 hover:text-gray-200'"
+                    class="px-3 py-2 text-xs font-semibold border rounded-lg transition-all">Snowflake</button>
+            <button @click="company = 'crowdstrike'" :class="company === 'crowdstrike' ? 'bg-purple-900/30 border-purple-500/50 text-purple-300' : 'border-gray-800 text-gray-400 hover:text-gray-200'"
+                    class="px-3 py-2 text-xs font-semibold border rounded-lg transition-all">CrowdStrike</button>
+            <button @click="company = 'palo_alto'" :class="company === 'palo_alto' ? 'bg-purple-900/30 border-purple-500/50 text-purple-300' : 'border-gray-800 text-gray-400 hover:text-gray-200'"
+                    class="px-3 py-2 text-xs font-semibold border rounded-lg transition-all">Palo Alto</button>
+            <button @click="company = 'dell'" :class="company === 'dell' ? 'bg-purple-900/30 border-purple-500/50 text-purple-300' : 'border-gray-800 text-gray-400 hover:text-gray-200'"
+                    class="px-3 py-2 text-xs font-semibold border rounded-lg transition-all">Dell</button>
+            <button @click="company = 'aws'" :class="company === 'aws' ? 'bg-purple-900/30 border-purple-500/50 text-purple-300' : 'border-gray-800 text-gray-400 hover:text-gray-200'"
+                    class="px-3 py-2 text-xs font-semibold border rounded-lg transition-all">AWS</button>
+            <button @click="company = 'google_cloud'" :class="company === 'google_cloud' ? 'bg-purple-900/30 border-purple-500/50 text-purple-300' : 'border-gray-800 text-gray-400 hover:text-gray-200'"
+                    class="px-3 py-2 text-xs font-semibold border rounded-lg transition-all">Google Cloud</button>
+        </div>
+    </div>
+
+    <!-- Mode -->
+    <div class="flex gap-2 mb-6">
+        <button @click="mode = 'report'" :class="mode === 'report' ? 'bg-purple-900/30 border-purple-500/50 text-purple-300' : 'border-gray-800 text-gray-400 hover:text-gray-200'"
+                class="px-4 py-2 text-xs font-semibold border rounded-lg transition-all">
+            Fit Report
+        </button>
+        <button @click="mode = 'conversation'" :class="mode === 'conversation' ? 'bg-purple-900/30 border-purple-500/50 text-purple-300' : 'border-gray-800 text-gray-400 hover:text-gray-200'"
+                class="px-4 py-2 text-xs font-semibold border rounded-lg transition-all">
+            Conversation
+        </button>
+    </div>
+
+    <!-- Submit -->
+    <button @click="submit()" :disabled="running"
+            class="px-6 py-2.5 text-sm font-semibold rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            :class="running ? 'bg-gray-700 text-gray-400' : 'bg-purple-600 text-white hover:bg-purple-500'">
+        <span x-show="!running">Generate Report</span>
+        <span x-show="running" class="flex items-center gap-2">
+            <svg class="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" stroke-dasharray="30 70"/></svg>
+            Generating...
+        </span>
+    </button>
+
+    <!-- Result -->
+    <div x-show="result" x-transition class="mt-6 p-4 rounded-lg border"
+         :class="status === 'error' ? 'border-red-900/50 bg-red-950/10' : 'border-gray-700 bg-gray-900/50'">
+        <div class="text-xs font-semibold mb-2"
+             :class="status === 'error' ? 'text-red-400' : status === 'complete' ? 'text-purple-400' : 'text-gray-400'"
+             x-text="status === 'error' ? 'Error' : status === 'complete' ? 'Complete' : 'Running...'"></div>
+        <pre class="text-xs text-gray-300 whitespace-pre-wrap max-h-96 overflow-y-auto" x-text="result"></pre>
+    </div>
+
+</div>
+{% endblock %}

@@ -4,7 +4,10 @@ Runs anomaly detection queries against network events, endpoint events,
 and ML anomaly scores to detect threats in real time.
 """
 
+import json
 import logging
+from datetime import datetime, date
+from decimal import Decimal
 from pathlib import Path
 from typing import Any
 
@@ -87,6 +90,35 @@ SELECT
 """
 
 
+# Databricks Unity Catalog API events — shows the API call burst
+DATABRICKS_API_SQL = """
+SELECT * FROM DATABRICKS_API_EVENTS
+ORDER BY EVENT_TIME ASC
+"""
+
+
+def _serialize_row(row: dict) -> dict:
+    """Make a Snowflake DictCursor row JSON-safe.
+
+    Converts Decimal → float, datetime → ISO string, and parses
+    VARIANT (JSON string) columns like CONTRIBUTING_FACTORS.
+    """
+    out = {}
+    for k, v in row.items():
+        if isinstance(v, Decimal):
+            out[k] = float(v)
+        elif isinstance(v, (datetime, date)):
+            out[k] = v.isoformat()
+        elif isinstance(v, str) and k == "CONTRIBUTING_FACTORS":
+            try:
+                out[k] = json.loads(v)
+            except (json.JSONDecodeError, TypeError):
+                out[k] = v
+        else:
+            out[k] = v
+    return out
+
+
 class SnowflakeClient:
     """Client for Snowflake CYBER_SECURITY database queries."""
 
@@ -136,7 +168,7 @@ class SnowflakeClient:
             cur = conn.cursor()
 
             # Wipe existing data so each scenario starts clean
-            for table in ("ANOMALY_SCORES", "ENDPOINT_EVENTS", "NETWORK_EVENTS"):
+            for table in ("ANOMALY_SCORES", "ENDPOINT_EVENTS", "NETWORK_EVENTS", "DATABRICKS_API_EVENTS"):
                 cur.execute(f"TRUNCATE TABLE IF EXISTS {table}")
 
             # Execute the scenario's INSERT statements
@@ -196,7 +228,6 @@ class SnowflakeClient:
                 # Parse contributing_factors from Snowflake VARIANT (comes as JSON string)
                 factors = row["CONTRIBUTING_FACTORS"]
                 if isinstance(factors, str):
-                    import json
                     factors = json.loads(factors)
 
                 threats.append({
@@ -229,6 +260,54 @@ class SnowflakeClient:
 
         except Exception as e:
             logger.error(f"Snowflake anomaly detection error: {e}")
+            raise
+        finally:
+            if conn:
+                conn.close()
+
+
+    async def get_siem_data(self) -> dict:
+        """Fetch raw rows from all 3 SIEM tables for the Snowflake worksheet page.
+
+        Returns a dict with anomaly_scores, endpoint_events, network_events,
+        and the anomaly detection query results — used to show CxOs the
+        actual Snowflake data behind the detection.
+        """
+        conn = None
+        try:
+            conn = self._connect()
+            cur = conn.cursor(snowflake.connector.DictCursor)
+
+            # Anomaly scores
+            cur.execute("SELECT * FROM ANOMALY_SCORES ORDER BY CURRENT_SCORE DESC")
+            anomaly_scores = [_serialize_row(row) for row in cur.fetchall()]
+
+            # Endpoint events
+            cur.execute("SELECT * FROM ENDPOINT_EVENTS ORDER BY RISK_SCORE DESC, EVENT_TIME DESC")
+            endpoint_events = [_serialize_row(row) for row in cur.fetchall()]
+
+            # Network events (top 30 by bytes sent, keeps the page readable)
+            cur.execute("SELECT * FROM NETWORK_EVENTS ORDER BY BYTES_SENT DESC LIMIT 30")
+            network_events = [_serialize_row(row) for row in cur.fetchall()]
+
+            # Databricks API events (AI Factory scenario — empty for other scenarios)
+            cur.execute(DATABRICKS_API_SQL)
+            databricks_api_events = [_serialize_row(row) for row in cur.fetchall()]
+
+            # Run the anomaly detection query (same one used in Step 1)
+            cur.execute(ANOMALY_DETECTION_SQL)
+            detection_results = [_serialize_row(row) for row in cur.fetchall()]
+
+            return {
+                "anomaly_scores": anomaly_scores,
+                "endpoint_events": endpoint_events,
+                "network_events": network_events,
+                "databricks_api_events": databricks_api_events,
+                "detection_results": detection_results,
+            }
+
+        except Exception as e:
+            logger.error(f"Snowflake SIEM data fetch error: {e}")
             raise
         finally:
             if conn:

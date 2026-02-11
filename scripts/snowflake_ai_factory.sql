@@ -54,6 +54,30 @@ SELECT 'AS-AI-004', 'HOST', 'GPU-INF-01', '10.30.1.20', 6.10, 1.3, 4.80, 'HIGH_A
        }'),
        'sf-anomaly-v3.2', CURRENT_TIMESTAMP();
 
+-- ── DATABRICKS_API_EVENTS: 15 rows — the "smoking gun" ──────
+-- Normal baseline (2 calls), then a burst of 13 calls in ~3 min
+-- from the stolen service principal svc-unity-rd-pipeline
+
+INSERT INTO DATABRICKS_API_EVENTS (event_id, event_time, service_principal, api_endpoint, http_method, status_code, response_bytes, source_ip, catalog_name, tables_accessed, is_anomalous)
+VALUES
+    -- Baseline: normal automated calls (daily catalog sync)
+    ('DBX-AI-001', DATEADD(MINUTE, -120, CURRENT_TIMESTAMP()), 'svc-unity-rd-pipeline', '/api/2.1/unity-catalog/tables', 'GET', 200, 4200, '10.30.3.10', 'rd_pharma', 12, FALSE),
+    ('DBX-AI-002', DATEADD(MINUTE, -60, CURRENT_TIMESTAMP()), 'svc-unity-rd-pipeline', '/api/2.1/unity-catalog/schemas', 'GET', 200, 1800, '10.30.3.10', 'rd_pharma', 0, FALSE),
+    -- Attack burst begins: bulk catalog listing from stolen credential
+    ('DBX-AI-003', DATEADD(SECOND, -180, CURRENT_TIMESTAMP()), 'svc-unity-rd-pipeline', '/api/2.1/unity-catalog/tables?catalog=rd_pharma', 'GET', 200, 2800000, '91.234.99.44', 'rd_pharma', 14247, TRUE),
+    ('DBX-AI-004', DATEADD(SECOND, -165, CURRENT_TIMESTAMP()), 'svc-unity-rd-pipeline', '/api/2.1/unity-catalog/tables?catalog=clinical_trials', 'GET', 200, 1450000, '91.234.99.44', 'clinical_trials', 8432, TRUE),
+    ('DBX-AI-005', DATEADD(SECOND, -150, CURRENT_TIMESTAMP()), 'svc-unity-rd-pipeline', '/api/2.1/unity-catalog/volumes/list', 'GET', 200, 890000, '91.234.99.44', 'rd_pharma', 0, TRUE),
+    ('DBX-AI-006', DATEADD(SECOND, -135, CURRENT_TIMESTAMP()), 'svc-unity-rd-pipeline', '/api/2.0/mlflow/experiments/search', 'GET', 200, 3200000, '91.234.99.44', 'rd_pharma', 0, TRUE),
+    ('DBX-AI-007', DATEADD(SECOND, -120, CURRENT_TIMESTAMP()), 'svc-unity-rd-pipeline', '/api/2.0/mlflow/runs/search', 'POST', 200, 18500000, '91.234.99.44', 'rd_pharma', 0, TRUE),
+    ('DBX-AI-008', DATEADD(SECOND, -105, CURRENT_TIMESTAMP()), 'svc-unity-rd-pipeline', '/api/2.0/mlflow/artifacts/list?run_id=BPX7721-v142', 'GET', 200, 4700000, '91.234.99.44', 'rd_pharma', 0, TRUE),
+    ('DBX-AI-009', DATEADD(SECOND, -90, CURRENT_TIMESTAMP()), 'svc-unity-rd-pipeline', '/api/2.1/unity-catalog/tables/rd_pharma.molecular.sims/export', 'POST', 200, 42000000, '91.234.99.44', 'rd_pharma', 1, TRUE),
+    ('DBX-AI-010', DATEADD(SECOND, -75, CURRENT_TIMESTAMP()), 'svc-unity-rd-pipeline', '/api/2.1/unity-catalog/tables/rd_pharma.genomics.sequences/export', 'POST', 200, 38000000, '91.234.99.44', 'rd_pharma', 1, TRUE),
+    ('DBX-AI-011', DATEADD(SECOND, -60, CURRENT_TIMESTAMP()), 'svc-unity-rd-pipeline', '/api/2.1/unity-catalog/tables/clinical_trials.phase3.bpx7721/export', 'POST', 200, 28500000, '91.234.99.44', 'clinical_trials', 1, TRUE),
+    ('DBX-AI-012', DATEADD(SECOND, -45, CURRENT_TIMESTAMP()), 'svc-unity-rd-pipeline', '/api/2.0/mlflow/model-versions/get-download-uri', 'GET', 200, 67000000, '91.234.99.44', 'rd_pharma', 0, TRUE),
+    ('DBX-AI-013', DATEADD(SECOND, -30, CURRENT_TIMESTAMP()), 'svc-unity-rd-pipeline', '/api/2.1/unity-catalog/permissions/bulk-export', 'GET', 200, 1200000, '91.234.99.44', 'rd_pharma', 0, TRUE),
+    ('DBX-AI-014', DATEADD(SECOND, -15, CURRENT_TIMESTAMP()), 'svc-unity-rd-pipeline', '/api/2.0/secrets/list?scope=rd-credentials', 'GET', 200, 340000, '91.234.99.44', 'rd_pharma', 0, TRUE),
+    ('DBX-AI-015', DATEADD(SECOND, -5, CURRENT_TIMESTAMP()), 'svc-unity-rd-pipeline', '/api/2.1/unity-catalog/tables/rd_pharma.compounds.admet/export', 'POST', 200, 15800000, '91.234.99.44', 'rd_pharma', 1, TRUE);
+
 -- ── ENDPOINT_EVENTS: 10 AI Factory detections ───────────────
 
 INSERT INTO ENDPOINT_EVENTS (event_id, hostname, event_type, severity, detection_name, risk_score, process_name, file_path, event_time)

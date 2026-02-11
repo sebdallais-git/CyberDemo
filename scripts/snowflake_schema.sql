@@ -49,6 +49,22 @@ CREATE TABLE IF NOT EXISTS ENDPOINT_EVENTS (
     PRIMARY KEY (event_id)
 );
 
+-- Databricks Unity Catalog API events (AI Factory scenario)
+CREATE TABLE IF NOT EXISTS DATABRICKS_API_EVENTS (
+    event_id        VARCHAR(20)  NOT NULL,
+    event_time      TIMESTAMP_NTZ NOT NULL,
+    service_principal VARCHAR(60) NOT NULL,
+    api_endpoint    VARCHAR(120) NOT NULL,
+    http_method     VARCHAR(10)  NOT NULL,
+    status_code     INT          NOT NULL,
+    response_bytes  BIGINT       NOT NULL,
+    source_ip       VARCHAR(15)  NOT NULL,
+    catalog_name    VARCHAR(50)  NOT NULL,
+    tables_accessed INT          NOT NULL,
+    is_anomalous    BOOLEAN      NOT NULL,
+    PRIMARY KEY (event_id)
+);
+
 -- Network flow events (firewall/IDS)
 CREATE TABLE IF NOT EXISTS NETWORK_EVENTS (
     event_id        VARCHAR(20)  NOT NULL,

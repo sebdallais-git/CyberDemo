@@ -27,6 +27,16 @@ class Settings(BaseSettings):
     DATABRICKS_HOST: str = ""  # e.g. "dbc-9a9a2925-5ad0.cloud.databricks.com"
     DATABRICKS_TOKEN: str = ""
 
+    # Anthropic (AI Agents)
+    ANTHROPIC_API_KEY: str = ""
+    ANTHROPIC_MODEL: str = "claude-sonnet-4-5-20250929"  # Sonnet for speed; override to Opus for quality
+
+    # Brave Search (Scenarist web search)
+    BRAVE_API_KEY: str = ""
+
+    # Agent output directory
+    AGENT_OUTPUT_DIR: str = "agents/output"
+
     # App
     APP_PORT: int = 8889
 

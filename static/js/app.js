@@ -37,6 +37,9 @@ const ATTACK_SEQUENCES = {
 
 function cyberDemo() {
     return {
+        // --- Director mixin (merged from agents.js) ---
+        ...(typeof directorMixin !== 'undefined' ? directorMixin : {}),
+
         // --- State ---
         running: false,
         currentStep: 0,
@@ -177,6 +180,13 @@ function cyberDemo() {
             this.recovery = { pit_id: "", restored_files: 0, progress: 0 };
             this.snowflakeDetection = { threat_score: 0, threat_count: 0, primary_host: "", summary: {}, threats: [], model_version: "" };
             this.aiFactory = { status: "ONLINE", gpuUtil: 85, trainingJobs: 12, vramTB: 2.35, experimentsAffected: 2847, modelsAtRisk: 142 };
+
+            // Start Director stream if the panel is enabled
+            if (this.directorEnabled && typeof this.startDirectorStream === 'function') {
+                this.directorHistory = [];
+                this.directorCue = { cue: "", talking_points: [], next_cues: [], timing: "standby" };
+                this.startDirectorStream(type);
+            }
 
             // Cascade attack events with staggered delays (plays during DETECT phase)
             const sequence = ATTACK_SEQUENCES[type] || [];

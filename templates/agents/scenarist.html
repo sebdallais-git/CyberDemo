@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block title %}Scenarist{% endblock %}
+
+{% block content %}
+<div x-data="scenaristForm()">
+
+    <!-- Nav -->
+    <div class="flex items-center gap-3 mb-6">
+        <a href="/agents"
+           class="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold text-gray-400 border border-gray-800 rounded-lg bg-gray-900/50 hover:bg-gray-800/50 hover:border-gray-600 hover:text-gray-200 transition-all">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+                <path d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18"/>
+            </svg>
+            Agents
+        </a>
+    </div>
+
+    <!-- Header -->
+    <div class="mb-6">
+        <h2 class="text-xl font-bold text-white mb-1">Scenarist</h2>
+        <p class="text-sm text-gray-400">Generate complete scenario packages from news or curated input.</p>
+    </div>
+
+    <!-- Mode Toggle -->
+    <div class="flex gap-2 mb-6">
+        <button @click="mode = 'search'" :class="mode === 'search' ? 'bg-emerald-900/30 border-emerald-500/50 text-emerald-300' : 'border-gray-800 text-gray-400 hover:text-gray-200'"
+                class="px-4 py-2 text-xs font-semibold border rounded-lg transition-all">
+            Web Search
+        </button>
+        <button @click="mode = 'curated'" :class="mode === 'curated' ? 'bg-emerald-900/30 border-emerald-500/50 text-emerald-300' : 'border-gray-800 text-gray-400 hover:text-gray-200'"
+                class="px-4 py-2 text-xs font-semibold border rounded-lg transition-all">
+            Curated Input
+        </button>
+    </div>
+
+    <!-- Search Mode -->
+    <div x-show="mode === 'search'" class="space-y-4 mb-6">
+        <div>
+            <label class="block text-xs font-semibold text-gray-400 mb-1">Search Topic</label>
+            <input x-model="topic" type="text" placeholder="pharma ransomware attack 2025"
+                   class="w-full px-3 py-2 text-sm bg-gray-900 border border-gray-700 rounded-lg text-white focus:border-emerald-500 focus:outline-none">
+        </div>
+    </div>
+
+    <!-- Curated Mode -->
+    <div x-show="mode === 'curated'" class="space-y-4 mb-6">
+        <div>
+            <label class="block text-xs font-semibold text-gray-400 mb-1">Source Text</label>
+            <textarea x-model="curatedText" rows="6" placeholder="Paste article or incident details..."
+                      class="w-full px-3 py-2 text-sm bg-gray-900 border border-gray-700 rounded-lg text-white focus:border-emerald-500 focus:outline-none"></textarea>
+        </div>
+        <div>
+            <label class="block text-xs font-semibold text-gray-400 mb-1">URLs (one per line)</label>
+            <textarea x-model="urls" rows="3" placeholder="https://example.com/article..."
+                      class="w-full px-3 py-2 text-sm bg-gray-900 border border-gray-700 rounded-lg text-white focus:border-emerald-500 focus:outline-none"></textarea>
+        </div>
+    </div>
+
+    <!-- Scenario Name -->
+    <div class="mb-6">
+        <label class="block text-xs font-semibold text-gray-400 mb-1">Scenario Name (optional)</label>
+        <input x-model="scenarioName" type="text" placeholder="auto-generated from content"
+               class="w-full px-3 py-2 text-sm bg-gray-900 border border-gray-700 rounded-lg text-white focus:border-emerald-500 focus:outline-none">
+    </div>
+
+    <!-- Submit -->
+    <button @click="submit()" :disabled="running"
+            class="px-6 py-2.5 text-sm font-semibold rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            :class="running ? 'bg-gray-700 text-gray-400' : 'bg-emerald-600 text-white hover:bg-emerald-500'">
+        <span x-show="!running">Generate Scenario</span>
+        <span x-show="running" class="flex items-center gap-2">
+            <svg class="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" stroke-dasharray="30 70"/></svg>
+            Generating...
+        </span>
+    </button>
+
+    <!-- Result -->
+    <div x-show="result" x-transition class="mt-6 p-4 rounded-lg border"
+         :class="status === 'error' ? 'border-red-900/50 bg-red-950/10' : 'border-gray-700 bg-gray-900/50'">
+        <div class="text-xs font-semibold mb-2"
+             :class="status === 'error' ? 'text-red-400' : status === 'complete' ? 'text-emerald-400' : 'text-gray-400'"
+             x-text="status === 'error' ? 'Error' : status === 'complete' ? 'Complete' : 'Running...'"></div>
+        <pre class="text-xs text-gray-300 whitespace-pre-wrap max-h-96 overflow-y-auto" x-text="result"></pre>
+    </div>
+
+</div>
+{% endblock %}

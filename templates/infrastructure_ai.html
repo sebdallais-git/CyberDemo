@@ -593,6 +593,35 @@
             </div>
         </div>
 
+        <!-- PowerFlex -->
+        <div class="product">
+            <div class="p-top">
+                <div class="p-icon">
+                    <svg viewBox="0 0 56 28" width="56" height="26">
+                        <rect x="1" y="2" width="54" height="24" rx="2" fill="#0f172a" stroke="#334155"/>
+                        <rect x="4" y="5" width="11" height="8" rx="1" fill="#1e293b" stroke="#3b82f6" stroke-width="0.7"/>
+                        <rect x="17" y="5" width="11" height="8" rx="1" fill="#1e293b" stroke="#3b82f6" stroke-width="0.7"/>
+                        <rect x="4" y="16" width="11" height="8" rx="1" fill="#1e293b" stroke="#3b82f6" stroke-width="0.7"/>
+                        <rect x="17" y="16" width="11" height="8" rx="1" fill="#1e293b" stroke="#3b82f6" stroke-width="0.7"/>
+                        <text x="9" y="11" text-anchor="middle" fill="#60a5fa" font-size="4" font-family="monospace">SDS</text>
+                        <text x="22" y="11" text-anchor="middle" fill="#60a5fa" font-size="4" font-family="monospace">SDS</text>
+                        <circle cx="44" cy="9" r="2" class="p-led-green" fill="#22c55e"/>
+                        <circle cx="44" cy="17" r="2" class="p-led-blue" fill="#3b82f6"/>
+                        <circle cx="44" cy="24" r="2" class="p-led-green" fill="#22c55e"/>
+                    </svg>
+                </div>
+                <span class="p-badge badge-dell">Dell</span>
+            </div>
+            <div class="p-name">Dell PowerFlex</div>
+            <div class="p-model">PFLEX-AI-01 — 4 nodes</div>
+            <div class="p-role">Software-defined block storage for GPU checkpoint I/O, model weight caching, and inter-node shuffle. Sub-millisecond latency for training restarts.</div>
+            <div class="p-specs">
+                <span class="p-spec">4 nodes</span>
+                <span class="p-spec">96 TB NVMe</span>
+                <span class="p-spec">360 Gbps</span>
+            </div>
+        </div>
+
         <!-- Networking -->
         <div class="product">
             <div class="p-top">
@@ -920,11 +949,12 @@
         'S3-Compatible':       { level: 'at-risk',     label: 'Delta Lake Tables at Risk',                 color: 'amber', order: 3 },
         'GPU-TRAIN-01':        { level: 'at-risk',     label: 'Simulation Results Wiped — Wiper Payload',  color: 'amber', order: 4 },
         'GPU-INF-01':          { level: 'at-risk',     label: 'Model Serving Disrupted',                   color: 'amber', order: 5 },
-        'Experiment Tracking': { level: 'compromised', label: '2,847 Experiments Encrypted — 18mo Lost',   color: 'red',   order: 6 },
-        'R&D Notebooks':       { level: 'compromised', label: 'Notebooks + Scheduled Jobs Destroyed',      color: 'red',   order: 7 },
-        'CR 19.22':            { level: 'protected',   label: 'Air-Gapped — No Network Path',              color: 'green', order: 8 },
-        'ML Analytics':        { level: 'protected',   label: 'Ready to Scan Vault Copy',                  color: 'green', order: 9 },
-        'Data Domain — Vault': { level: 'protected',   label: 'Retention-Locked — Immutable Copy',         color: 'green', order: 10 },
+        'PFLEX-AI-01':         { level: 'at-risk',     label: 'Checkpoint Data at Risk — GPU-TRAIN-01',    color: 'amber', order: 6 },
+        'Experiment Tracking': { level: 'compromised', label: '2,847 Experiments Encrypted — 18mo Lost',   color: 'red',   order: 7 },
+        'R&D Notebooks':       { level: 'compromised', label: 'Notebooks + Scheduled Jobs Destroyed',      color: 'red',   order: 8 },
+        'CR 19.22':            { level: 'protected',   label: 'Air-Gapped — No Network Path',              color: 'green', order: 9 },
+        'ML Analytics':        { level: 'protected',   label: 'Ready to Scan Vault Copy',                  color: 'green', order: 10 },
+        'Data Domain — Vault': { level: 'protected',   label: 'Retention-Locked — Immutable Copy',         color: 'green', order: 11 },
     };
 
     // Recovery sequence — follows Dell Cyber Recovery workflow for AI Factory:
@@ -936,6 +966,7 @@
         { key: 'Data Domain — Vault', state: 'recovering', label: 'Clean PIT Identified — pit-2025-0207-0200',               color: 'cyan' },
         { key: 'Experiment Tracking', state: 'recovering', label: 'MLflow Artifacts Restoring — 2,847 Experiments',           color: 'cyan' },
         { key: 'R&D Notebooks',       state: 'recovering', label: 'Notebooks + Jobs Restoring from Vault Copy',              color: 'cyan' },
+        { key: 'PFLEX-AI-01',         state: 'recovering', label: 'Checkpoint Storage Restoring — Block Volumes Rebuilding',  color: 'cyan' },
         { key: 'GPU-TRAIN-01',        state: 'recovering', label: 'Training Cluster Reprovisioned — Jobs Requeued',          color: 'cyan' },
         { key: 'GPU-INF-01',          state: 'recovering', label: 'Inference Endpoints Redeployed',                          color: 'cyan' },
         { key: 'AI-DATA-01',          state: 'recovering', label: 'Training Data Restoring from Vault — 480 TB',             color: 'cyan' },
@@ -947,6 +978,7 @@
         { key: 'Data Domain — Vault', state: 'restored',   label: 'Retention Lock Re-engaged',                               color: 'green' },
         { key: 'Experiment Tracking', state: 'restored',   label: 'All Experiments Recovered — Lineage Intact',              color: 'green' },
         { key: 'R&D Notebooks',       state: 'restored',   label: 'Workspace Online — 87 Notebooks Verified',               color: 'green' },
+        { key: 'PFLEX-AI-01',         state: 'restored',   label: 'Block Storage Online — Checkpoint I/O Verified',          color: 'green' },
         { key: 'GPU-TRAIN-01',        state: 'restored',   label: 'GPU Cluster Online — BPX-7721 Training Resumed',         color: 'green' },
         { key: 'GPU-INF-01',          state: 'restored',   label: 'Model Serving Restored — QSAR Scoring Active',           color: 'green' },
         { key: 'AI-DATA-01',          state: 'restored',   label: 'Data Lake Verified — GxP Integrity Confirmed',           color: 'green' },

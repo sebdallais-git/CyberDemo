@@ -1,0 +1,426 @@
+{% extends "base.html" %}
+{% block title %}Snowflake Worksheet{% endblock %}
+
+{% block content %}
+<div x-data="snowflakeWorksheet()" x-init="loadData()">
+
+    <!-- Top bar: Snowflake branding + back link -->
+    <div class="flex items-center justify-between mb-6">
+        <div class="flex items-center gap-3">
+            <svg class="w-6 h-6 text-blue-400" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 2L8.5 8.5 2 12l6.5 3.5L12 22l3.5-6.5L22 12l-6.5-3.5L12 2zm0 4.24L13.76 10 10 13.76 12 17.76 13.76 14 17.76 12 14 10.24 12 6.24z"/>
+            </svg>
+            <span class="text-lg font-bold text-blue-400">Snowflake</span>
+            <span class="text-gray-600">|</span>
+            <span class="text-sm text-gray-400">CYBER_SECURITY.SIEM</span>
+            <span class="text-xs px-2 py-0.5 bg-blue-500/20 text-blue-400 rounded-full font-bold">LIVE</span>
+        </div>
+        <a href="/"
+           class="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold text-gray-400 border border-gray-800 rounded-lg bg-gray-900/50 hover:bg-gray-800/50 hover:border-gray-600 hover:text-gray-200 transition-all">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+                <path d="M19 12H5m0 0l7 7m-7-7l7-7"/>
+            </svg>
+            Back to Dashboard
+        </a>
+    </div>
+
+    <!-- Loading state -->
+    <div x-show="loading" class="flex items-center justify-center py-20">
+        <div class="flex items-center gap-3 text-blue-400">
+            <svg class="w-5 h-5 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10" stroke-opacity="0.3"/>
+                <path d="M12 2a10 10 0 0 1 10 10"/>
+            </svg>
+            <span class="text-sm">Querying Snowflake...</span>
+        </div>
+    </div>
+
+    <!-- Error state -->
+    <div x-show="error && !loading" class="p-5 rounded-xl border border-red-900/50 bg-gray-900/50 text-center py-12">
+        <div class="text-red-400 text-sm mb-2">Failed to load Snowflake data</div>
+        <div class="text-gray-500 text-xs" x-text="error"></div>
+    </div>
+
+    <!-- Main content (shown when data loaded) -->
+    <div x-show="!loading && !error" x-cloak>
+
+        <!-- Tab navigation -->
+        <div class="flex items-center gap-1 mb-4 border-b border-gray-800">
+            <template x-for="tab in tabs" :key="tab.id">
+                <button @click="activeTab = tab.id"
+                        class="px-4 py-2.5 text-xs font-semibold uppercase tracking-wider border-b-2 transition-all"
+                        :class="activeTab === tab.id
+                            ? 'border-blue-500 text-blue-400 bg-blue-500/5'
+                            : 'border-transparent text-gray-500 hover:text-gray-300 hover:border-gray-700'">
+                    <span x-text="tab.label"></span>
+                    <span class="ml-1.5 text-[10px] px-1.5 py-0.5 rounded-full"
+                          :class="activeTab === tab.id ? 'bg-blue-500/20 text-blue-400' : 'bg-gray-800 text-gray-500'"
+                          x-text="tab.count"></span>
+                </button>
+            </template>
+        </div>
+
+        <!-- SQL Query panel (collapsible) -->
+        <div class="mb-4">
+            <button @click="showQuery = !showQuery"
+                    class="flex items-center gap-2 text-xs text-gray-500 hover:text-gray-300 transition-all">
+                <svg class="w-3 h-3 transition-transform" :class="showQuery && 'rotate-90'" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M8 5v14l11-7z"/>
+                </svg>
+                <span x-text="showQuery ? 'Hide SQL' : 'Show SQL Query'"></span>
+            </button>
+            <div x-show="showQuery" x-transition class="mt-2 p-4 rounded-lg bg-gray-900 border border-gray-800 overflow-x-auto">
+                <pre class="text-xs text-blue-300/80 leading-relaxed whitespace-pre" x-text="queries[activeTab]"></pre>
+            </div>
+        </div>
+
+        <!-- ═══ Tab: Anomaly Detection Query ═══ -->
+        <div x-show="activeTab === 'detection'" class="rounded-xl border border-blue-900/50 bg-gray-900/50 overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full text-xs">
+                    <thead>
+                        <tr class="bg-gray-800/50 border-b border-gray-700">
+                            <th class="px-3 py-2 text-left text-gray-400 font-semibold">HOSTNAME</th>
+                            <th class="px-3 py-2 text-left text-gray-400 font-semibold">IP</th>
+                            <th class="px-3 py-2 text-right text-gray-400 font-semibold">THREAT_SCORE</th>
+                            <th class="px-3 py-2 text-left text-gray-400 font-semibold">ANOMALY_LABEL</th>
+                            <th class="px-3 py-2 text-right text-gray-400 font-semibold">ENDPOINT_DETECTIONS</th>
+                            <th class="px-3 py-2 text-right text-gray-400 font-semibold">MAX_RISK</th>
+                            <th class="px-3 py-2 text-right text-gray-400 font-semibold">SUSPICIOUS_NET_CONN</th>
+                            <th class="px-3 py-2 text-right text-gray-400 font-semibold">BYTES_EXFIL</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <template x-for="(row, i) in data.detection_results" :key="i">
+                            <tr class="border-b border-gray-800/50 hover:bg-gray-800/30"
+                                :class="row.THREAT_SCORE > 8 ? 'bg-red-950/10' : ''">
+                                <td class="px-3 py-2 font-mono font-bold"
+                                    :class="row.THREAT_SCORE > 8 ? 'text-red-400' : 'text-amber-400'"
+                                    x-text="row.HOSTNAME"></td>
+                                <td class="px-3 py-2 text-gray-400" x-text="row.IP"></td>
+                                <td class="px-3 py-2 text-right font-bold"
+                                    :class="row.THREAT_SCORE > 8 ? 'text-red-400' : 'text-amber-400'">
+                                    <span x-text="parseFloat(row.THREAT_SCORE).toFixed(2)"></span>/10
+                                </td>
+                                <td class="px-3 py-2">
+                                    <span class="px-1.5 py-0.5 rounded text-[10px] font-bold"
+                                          :class="row.ANOMALY_LABEL === 'CRITICAL_ANOMALY'
+                                              ? 'bg-red-500/20 text-red-400'
+                                              : 'bg-amber-500/20 text-amber-400'"
+                                          x-text="row.ANOMALY_LABEL"></span>
+                                </td>
+                                <td class="px-3 py-2 text-right text-gray-300" x-text="row.ENDPOINT_DETECTIONS"></td>
+                                <td class="px-3 py-2 text-right text-gray-300" x-text="parseFloat(row.MAX_ENDPOINT_RISK).toFixed(0)"></td>
+                                <td class="px-3 py-2 text-right text-gray-300" x-text="row.SUSPICIOUS_NET_CONNECTIONS"></td>
+                                <td class="px-3 py-2 text-right text-cyan-400" x-text="formatBytes(row.TOTAL_BYTES_EXFIL)"></td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+            <div class="px-3 py-2 bg-gray-800/30 border-t border-gray-800 text-[10px] text-gray-500 flex justify-between">
+                <span x-text="data.detection_results.length + ' rows returned'"></span>
+                <span>Query: ANOMALY_DETECTION — Snowflake AI/ML Engine v3.2</span>
+            </div>
+        </div>
+
+        <!-- ═══ Tab: Anomaly Scores ═══ -->
+        <div x-show="activeTab === 'anomaly'" class="rounded-xl border border-blue-900/50 bg-gray-900/50 overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full text-xs">
+                    <thead>
+                        <tr class="bg-gray-800/50 border-b border-gray-700">
+                            <th class="px-3 py-2 text-left text-gray-400 font-semibold">ENTITY_NAME</th>
+                            <th class="px-3 py-2 text-left text-gray-400 font-semibold">ENTITY_IP</th>
+                            <th class="px-3 py-2 text-left text-gray-400 font-semibold">ENTITY_TYPE</th>
+                            <th class="px-3 py-2 text-right text-gray-400 font-semibold">CURRENT_SCORE</th>
+                            <th class="px-3 py-2 text-right text-gray-400 font-semibold">BASELINE</th>
+                            <th class="px-3 py-2 text-right text-gray-400 font-semibold">DELTA</th>
+                            <th class="px-3 py-2 text-left text-gray-400 font-semibold">ANOMALY_LABEL</th>
+                            <th class="px-3 py-2 text-left text-gray-400 font-semibold">MODEL</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <template x-for="(row, i) in data.anomaly_scores" :key="i">
+                            <tr class="border-b border-gray-800/50 hover:bg-gray-800/30">
+                                <td class="px-3 py-2 font-mono font-bold"
+                                    :class="row.CURRENT_SCORE > 8 ? 'text-red-400' : 'text-amber-400'"
+                                    x-text="row.ENTITY_NAME"></td>
+                                <td class="px-3 py-2 text-gray-400" x-text="row.ENTITY_IP"></td>
+                                <td class="px-3 py-2 text-gray-500 uppercase" x-text="row.ENTITY_TYPE"></td>
+                                <td class="px-3 py-2 text-right font-bold"
+                                    :class="row.CURRENT_SCORE > 8 ? 'text-red-400' : 'text-amber-400'"
+                                    x-text="parseFloat(row.CURRENT_SCORE).toFixed(2)"></td>
+                                <td class="px-3 py-2 text-right text-gray-500" x-text="parseFloat(row.BASELINE_SCORE).toFixed(2)"></td>
+                                <td class="px-3 py-2 text-right text-red-400" x-text="'+' + parseFloat(row.ANOMALY_DELTA).toFixed(2)"></td>
+                                <td class="px-3 py-2">
+                                    <span class="px-1.5 py-0.5 rounded text-[10px] font-bold"
+                                          :class="row.ANOMALY_LABEL === 'CRITICAL_ANOMALY'
+                                              ? 'bg-red-500/20 text-red-400'
+                                              : 'bg-amber-500/20 text-amber-400'"
+                                          x-text="row.ANOMALY_LABEL"></span>
+                                </td>
+                                <td class="px-3 py-2 text-gray-600 text-[10px]" x-text="row.MODEL_VERSION"></td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+            <div class="px-3 py-2 bg-gray-800/30 border-t border-gray-800 text-[10px] text-gray-500 flex justify-between">
+                <span x-text="data.anomaly_scores.length + ' rows returned'"></span>
+                <span>Table: CYBER_SECURITY.SIEM.ANOMALY_SCORES</span>
+            </div>
+        </div>
+
+        <!-- ═══ Tab: Endpoint Events ═══ -->
+        <div x-show="activeTab === 'endpoint'" class="rounded-xl border border-blue-900/50 bg-gray-900/50 overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full text-xs">
+                    <thead>
+                        <tr class="bg-gray-800/50 border-b border-gray-700">
+                            <th class="px-3 py-2 text-left text-gray-400 font-semibold">HOSTNAME</th>
+                            <th class="px-3 py-2 text-left text-gray-400 font-semibold">EVENT_TYPE</th>
+                            <th class="px-3 py-2 text-left text-gray-400 font-semibold">SEVERITY</th>
+                            <th class="px-3 py-2 text-left text-gray-400 font-semibold">DETECTION_NAME</th>
+                            <th class="px-3 py-2 text-right text-gray-400 font-semibold">RISK_SCORE</th>
+                            <th class="px-3 py-2 text-left text-gray-400 font-semibold">PROCESS</th>
+                            <th class="px-3 py-2 text-left text-gray-400 font-semibold">FILE_PATH</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <template x-for="(row, i) in data.endpoint_events" :key="i">
+                            <tr class="border-b border-gray-800/50 hover:bg-gray-800/30">
+                                <td class="px-3 py-2 font-mono font-bold text-gray-300" x-text="row.HOSTNAME"></td>
+                                <td class="px-3 py-2">
+                                    <span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-gray-800 text-gray-300"
+                                          x-text="row.EVENT_TYPE"></span>
+                                </td>
+                                <td class="px-3 py-2">
+                                    <span class="px-1.5 py-0.5 rounded text-[10px] font-bold"
+                                          :class="{
+                                              'bg-red-500/20 text-red-400': row.SEVERITY === 'CRITICAL',
+                                              'bg-amber-500/20 text-amber-400': row.SEVERITY === 'HIGH',
+                                              'bg-yellow-500/20 text-yellow-400': row.SEVERITY === 'MEDIUM',
+                                              'bg-gray-500/20 text-gray-400': row.SEVERITY === 'LOW',
+                                          }"
+                                          x-text="row.SEVERITY"></span>
+                                </td>
+                                <td class="px-3 py-2 text-gray-300" x-text="row.DETECTION_NAME"></td>
+                                <td class="px-3 py-2 text-right font-bold"
+                                    :class="row.RISK_SCORE >= 90 ? 'text-red-400' : row.RISK_SCORE >= 70 ? 'text-amber-400' : 'text-gray-400'"
+                                    x-text="row.RISK_SCORE"></td>
+                                <td class="px-3 py-2 text-gray-500 font-mono text-[10px]" x-text="row.PROCESS_NAME"></td>
+                                <td class="px-3 py-2 text-gray-500 font-mono text-[10px] max-w-[200px] truncate" x-text="row.FILE_PATH"></td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+            <div class="px-3 py-2 bg-gray-800/30 border-t border-gray-800 text-[10px] text-gray-500 flex justify-between">
+                <span x-text="data.endpoint_events.length + ' rows returned'"></span>
+                <span>Table: CYBER_SECURITY.SIEM.ENDPOINT_EVENTS</span>
+            </div>
+        </div>
+
+        <!-- ═══ Tab: Network Events ═══ -->
+        <div x-show="activeTab === 'network'" class="rounded-xl border border-blue-900/50 bg-gray-900/50 overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full text-xs">
+                    <thead>
+                        <tr class="bg-gray-800/50 border-b border-gray-700">
+                            <th class="px-3 py-2 text-left text-gray-400 font-semibold">SOURCE_HOST</th>
+                            <th class="px-3 py-2 text-left text-gray-400 font-semibold">SOURCE_IP</th>
+                            <th class="px-3 py-2 text-left text-gray-400 font-semibold">DEST_IP</th>
+                            <th class="px-3 py-2 text-right text-gray-400 font-semibold">DEST_PORT</th>
+                            <th class="px-3 py-2 text-left text-gray-400 font-semibold">PROTOCOL</th>
+                            <th class="px-3 py-2 text-right text-gray-400 font-semibold">BYTES_SENT</th>
+                            <th class="px-3 py-2 text-right text-gray-400 font-semibold">BYTES_RECV</th>
+                            <th class="px-3 py-2 text-left text-gray-400 font-semibold">GEO</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <template x-for="(row, i) in data.network_events" :key="i">
+                            <tr class="border-b border-gray-800/50 hover:bg-gray-800/30">
+                                <td class="px-3 py-2 font-mono font-bold text-gray-300" x-text="row.SOURCE_HOST"></td>
+                                <td class="px-3 py-2 text-gray-400 font-mono" x-text="row.SOURCE_IP"></td>
+                                <td class="px-3 py-2 text-gray-400 font-mono" x-text="row.DEST_IP"></td>
+                                <td class="px-3 py-2 text-right"
+                                    :class="row.DEST_PORT === 445 ? 'text-red-400 font-bold' : 'text-gray-400'"
+                                    x-text="row.DEST_PORT"></td>
+                                <td class="px-3 py-2 text-gray-500" x-text="row.PROTOCOL"></td>
+                                <td class="px-3 py-2 text-right text-cyan-400" x-text="formatBytes(row.BYTES_SENT)"></td>
+                                <td class="px-3 py-2 text-right text-gray-400" x-text="formatBytes(row.BYTES_RECEIVED)"></td>
+                                <td class="px-3 py-2">
+                                    <span class="px-1.5 py-0.5 rounded text-[10px] font-bold"
+                                          :class="row.GEO_COUNTRY !== 'CH' ? 'bg-red-500/20 text-red-400' : 'bg-gray-800 text-gray-400'"
+                                          x-text="row.GEO_COUNTRY"></span>
+                                </td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+            <div class="px-3 py-2 bg-gray-800/30 border-t border-gray-800 text-[10px] text-gray-500 flex justify-between">
+                <span x-text="data.network_events.length + ' rows returned (top 30 by bytes_sent)'"></span>
+                <span>Table: CYBER_SECURITY.SIEM.NETWORK_EVENTS</span>
+            </div>
+        </div>
+
+        <!-- ═══ Tab: Databricks API Events ═══ -->
+        <div x-show="activeTab === 'databricks'" class="rounded-xl border border-purple-900/50 bg-gray-900/50 overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full text-xs">
+                    <thead>
+                        <tr class="bg-gray-800/50 border-b border-gray-700">
+                            <th class="px-3 py-2 text-left text-gray-400 font-semibold">EVENT_TIME</th>
+                            <th class="px-3 py-2 text-left text-gray-400 font-semibold">SERVICE_PRINCIPAL</th>
+                            <th class="px-3 py-2 text-left text-gray-400 font-semibold">API_ENDPOINT</th>
+                            <th class="px-3 py-2 text-left text-gray-400 font-semibold">METHOD</th>
+                            <th class="px-3 py-2 text-right text-gray-400 font-semibold">STATUS</th>
+                            <th class="px-3 py-2 text-right text-gray-400 font-semibold">RESP_BYTES</th>
+                            <th class="px-3 py-2 text-left text-gray-400 font-semibold">SOURCE_IP</th>
+                            <th class="px-3 py-2 text-left text-gray-400 font-semibold">CATALOG</th>
+                            <th class="px-3 py-2 text-right text-gray-400 font-semibold">TABLES</th>
+                            <th class="px-3 py-2 text-center text-gray-400 font-semibold">ANOMALOUS</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <template x-for="(row, i) in data.databricks_api_events" :key="i">
+                            <tr class="border-b border-gray-800/50 hover:bg-gray-800/30"
+                                :class="row.IS_ANOMALOUS ? 'bg-red-950/10' : ''">
+                                <td class="px-3 py-2 text-gray-400 font-mono text-[10px]" x-text="row.EVENT_TIME"></td>
+                                <td class="px-3 py-2 font-mono text-purple-400" x-text="row.SERVICE_PRINCIPAL"></td>
+                                <td class="px-3 py-2 font-mono text-[10px] max-w-[280px] truncate"
+                                    :class="row.IS_ANOMALOUS ? 'text-red-300' : 'text-gray-400'"
+                                    x-text="row.API_ENDPOINT"></td>
+                                <td class="px-3 py-2">
+                                    <span class="px-1.5 py-0.5 rounded text-[10px] font-bold"
+                                          :class="row.HTTP_METHOD === 'POST' ? 'bg-amber-500/20 text-amber-400' : 'bg-gray-800 text-gray-400'"
+                                          x-text="row.HTTP_METHOD"></span>
+                                </td>
+                                <td class="px-3 py-2 text-right text-gray-400" x-text="row.STATUS_CODE"></td>
+                                <td class="px-3 py-2 text-right font-bold"
+                                    :class="row.RESPONSE_BYTES > 1000000 ? 'text-red-400' : 'text-gray-400'"
+                                    x-text="formatBytes(row.RESPONSE_BYTES)"></td>
+                                <td class="px-3 py-2 font-mono"
+                                    :class="row.SOURCE_IP.startsWith('91.') ? 'text-red-400 font-bold' : 'text-gray-400'"
+                                    x-text="row.SOURCE_IP"></td>
+                                <td class="px-3 py-2 text-gray-500" x-text="row.CATALOG_NAME"></td>
+                                <td class="px-3 py-2 text-right"
+                                    :class="row.TABLES_ACCESSED > 1000 ? 'text-red-400 font-bold' : 'text-gray-400'"
+                                    x-text="row.TABLES_ACCESSED"></td>
+                                <td class="px-3 py-2 text-center">
+                                    <span x-show="row.IS_ANOMALOUS" class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-500/20 text-red-400">ANOMALY</span>
+                                    <span x-show="!row.IS_ANOMALOUS" class="text-gray-600">—</span>
+                                </td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+            <div class="px-3 py-2 bg-gray-800/30 border-t border-gray-800 text-[10px] text-gray-500 flex justify-between">
+                <span x-text="data.databricks_api_events.length + ' rows returned'"></span>
+                <span>Table: CYBER_SECURITY.SIEM.DATABRICKS_API_EVENTS</span>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+function snowflakeWorksheet() {
+    return {
+        loading: true,
+        error: null,
+        activeTab: 'detection',
+        showQuery: false,
+
+        data: {
+            anomaly_scores: [],
+            endpoint_events: [],
+            network_events: [],
+            databricks_api_events: [],
+            detection_results: [],
+        },
+
+        // Tab definitions — counts are updated after data loads
+        tabs: [
+            { id: 'detection', label: 'Anomaly Detection', count: 0 },
+            { id: 'anomaly', label: 'Anomaly Scores', count: 0 },
+            { id: 'endpoint', label: 'Endpoint Events', count: 0 },
+            { id: 'network', label: 'Network Events', count: 0 },
+            { id: 'databricks', label: 'Databricks API', count: 0 },
+        ],
+
+        // SQL shown per tab
+        queries: {
+            detection: `-- Anomaly Detection Query (sf-anomaly-v3.2)
+-- Correlates ML anomaly scores with endpoint detections and network activity
+WITH anomalies AS (
+    SELECT entity_name AS hostname, entity_ip AS ip,
+           current_score AS threat_score, anomaly_label, contributing_factors
+    FROM ANOMALY_SCORES
+    WHERE anomaly_label IN ('CRITICAL_ANOMALY', 'HIGH_ANOMALY')
+    ORDER BY current_score DESC
+),
+malicious_endpoints AS (
+    SELECT hostname, COUNT(*) AS detection_count, MAX(risk_score) AS max_risk
+    FROM ENDPOINT_EVENTS WHERE severity IN ('CRITICAL', 'HIGH')
+    GROUP BY hostname
+),
+suspicious_network AS (
+    SELECT source_host AS hostname, COUNT(*) AS suspicious_connections,
+           SUM(bytes_sent) AS total_bytes_out
+    FROM NETWORK_EVENTS WHERE dest_port = 445 OR geo_country != 'CH'
+    GROUP BY source_host HAVING suspicious_connections > 10
+)
+SELECT a.*, e.detection_count, e.max_risk, n.suspicious_connections, n.total_bytes_out
+FROM anomalies a
+LEFT JOIN malicious_endpoints e ON a.hostname = e.hostname
+LEFT JOIN suspicious_network n ON a.hostname = n.hostname
+ORDER BY a.threat_score DESC;`,
+            anomaly: `SELECT * FROM CYBER_SECURITY.SIEM.ANOMALY_SCORES\nORDER BY CURRENT_SCORE DESC;`,
+            endpoint: `SELECT * FROM CYBER_SECURITY.SIEM.ENDPOINT_EVENTS\nORDER BY RISK_SCORE DESC, EVENT_TIME DESC;`,
+            network: `SELECT * FROM CYBER_SECURITY.SIEM.NETWORK_EVENTS\nORDER BY BYTES_SENT DESC\nLIMIT 30;`,
+            databricks: `-- Databricks Unity Catalog API Events
+-- Shows the 14,000-call burst from stolen service principal
+SELECT event_id, event_time, service_principal, api_endpoint,
+       http_method, status_code, response_bytes, source_ip,
+       catalog_name, tables_accessed, is_anomalous
+FROM CYBER_SECURITY.SIEM.DATABRICKS_API_EVENTS
+ORDER BY EVENT_TIME ASC;`,
+        },
+
+        async loadData() {
+            try {
+                const resp = await fetch('/api/snowflake/data');
+                if (!resp.ok) throw new Error('HTTP ' + resp.status);
+                const json = await resp.json();
+                if (json.error) throw new Error(json.error);
+                this.data = json;
+                // Update tab counts
+                this.tabs[0].count = json.detection_results?.length || 0;
+                this.tabs[1].count = json.anomaly_scores?.length || 0;
+                this.tabs[2].count = json.endpoint_events?.length || 0;
+                this.tabs[3].count = json.network_events?.length || 0;
+                this.tabs[4].count = json.databricks_api_events?.length || 0;
+            } catch (e) {
+                this.error = e.message;
+            } finally {
+                this.loading = false;
+            }
+        },
+
+        /** Format byte counts into human-readable form. */
+        formatBytes(bytes) {
+            if (!bytes || bytes === 0) return '0 B';
+            const n = parseFloat(bytes);
+            if (n >= 1073741824) return (n / 1073741824).toFixed(1) + ' GB';
+            if (n >= 1048576) return (n / 1048576).toFixed(1) + ' MB';
+            if (n >= 1024) return (n / 1024).toFixed(1) + ' KB';
+            return n + ' B';
+        },
+    };
+}
+</script>
+{% endblock %}

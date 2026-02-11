@@ -98,7 +98,7 @@ def main():
 
     # Truncate tables before loading
     cur = conn.cursor()
-    for table in ("ANOMALY_SCORES", "ENDPOINT_EVENTS", "NETWORK_EVENTS"):
+    for table in ("ANOMALY_SCORES", "ENDPOINT_EVENTS", "NETWORK_EVENTS", "DATABRICKS_API_EVENTS"):
         cur.execute(f"TRUNCATE TABLE IF EXISTS {table}")
         print(f"  Truncated {table}")
 
