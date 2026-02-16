@@ -22,6 +22,7 @@ class Settings(BaseSettings):
     SNOWFLAKE_DATABASE: str = "CYBER_SECURITY"
     SNOWFLAKE_SCHEMA: str = "SIEM"
     SNOWFLAKE_WAREHOUSE: str = "CYBER_WH"
+    SNOWFLAKE_WORKSHEET_URL: str = ""  # Full URL to Snowflake workspace/worksheet to open during demo
 
     # Databricks
     DATABRICKS_HOST: str = ""  # e.g. "dbc-9a9a2925-5ad0.cloud.databricks.com"

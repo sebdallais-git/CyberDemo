@@ -20,7 +20,7 @@ from app.snowflake_client import snowflake_client
 
 logger = logging.getLogger(__name__)
 
-# Shared pause gate — the orchestrator waits here after step 2
+# Shared pause gate — the orchestrator waits here between steps
 # until the presenter clicks "Continue" in the UI.
 _resume_event: Optional[asyncio.Event] = None
 
@@ -100,8 +100,7 @@ async def run_scenario(scenario_type: ScenarioType) -> AsyncGenerator[str, None]
     6. RECOVER    — Initiate recovery from clean PIT copy
     7. RESOLVE    — Update ServiceNow incident to resolved
 
-    Uses try/finally to clean up the pause gate if the client disconnects
-    mid-scenario (sse-starlette calls aclose() → GeneratorExit).
+    Every step pauses and waits for the presenter to click "Continue".
     """
     global _resume_event
     details = SCENARIO_DETAILS[scenario_type]
@@ -144,15 +143,12 @@ async def run_scenario(scenario_type: ScenarioType) -> AsyncGenerator[str, None]
                    {"category": details["category"], "priority": details["priority"],
                     "source": "fallback"})
 
-    # ── PAUSE — let presenter open real Snowflake worksheets in a new tab ──
-    # Account ID format: "org-acct" → URL: https://app.snowflake.com/org/acct/#/worksheets
+    # ── PAUSE after Step 1 — open Snowflake workspace ──
     _resume_event = asyncio.Event()
-    sf_acct = settings.SNOWFLAKE_ACCOUNT
-    sf_url = f"https://app.snowflake.com/{sf_acct.replace('-', '/')}/#/worksheets" if sf_acct else "/snowflake"
+    sf_url = settings.SNOWFLAKE_WORKSHEET_URL or "/snowflake"
     pause_data = {"pause_type": "snowflake", "pause_url": sf_url}
-    # AI Factory scenario: also link to Databricks workspace so presenter can show the damage
     if scenario_type == ScenarioType.AI_FACTORY and settings.DATABRICKS_HOST:
-        pause_data["databricks_url"] = f"https://{settings.DATABRICKS_HOST}/#workspace/Shared/BaselPharma-RD/BPX-7721_Training_Pipeline"
+        pause_data["databricks_url"] = f"https://{settings.DATABRICKS_HOST}/explore/data/rd_pharma"
     yield await _emit(1, "PAUSE", StepStatus.COMPLETE,
                "Paused — view Snowflake threat analysis, then continue",
                pause_data)
@@ -198,15 +194,12 @@ async def run_scenario(scenario_type: ScenarioType) -> AsyncGenerator[str, None]
                    f"ServiceNow incident {incident_number} created (MOCK - SN unavailable)",
                    {"number": incident_number, "mode": "mock", "error": str(e)})
 
-    # ── PAUSE — let presenter open ServiceNow and inspect the incident ──
-    # Emit a PAUSE event so the frontend shows the "View Incident" button.
-    # The orchestrator blocks here until the presenter clicks "Continue".
-    # Wrapped in try/finally so _resume_event is cleaned up if the client
-    # disconnects while we're waiting (GeneratorExit from aclose()).
+    # ── PAUSE after Step 2 — open ServiceNow incident ──
     _resume_event = asyncio.Event()
+    sn_pause_url = incident_url or f"{settings.SNOW_INSTANCE_URL}/now/nav/ui/classic/params/target/incident_list.do"
     yield await _emit(2, "PAUSE", StepStatus.COMPLETE,
                "Paused — review incident in ServiceNow, then continue",
-               {"pause_type": "servicenow", "pause_url": incident_url,
+               {"pause_type": "servicenow", "pause_url": sn_pause_url,
                 "number": incident_number})
     try:
         await _resume_event.wait()
@@ -245,6 +238,16 @@ async def run_scenario(scenario_type: ScenarioType) -> AsyncGenerator[str, None]
                    "Vault sync complete (simulated)",
                    {"vault_state": "LOCKED", "error": str(e)})
 
+    # ── PAUSE after Step 3 ──
+    _resume_event = asyncio.Event()
+    yield await _emit(3, "PAUSE", StepStatus.COMPLETE,
+               "Vault sealed — click to continue",
+               {"pause_type": "continue"})
+    try:
+        await _resume_event.wait()
+    finally:
+        _resume_event = None
+
     # ── Step 4: CYBERSENSE ──────────────────────────────────────────
     yield await _emit(4, "CYBERSENSE", StepStatus.RUNNING,
                "CyberSense ML analysis scanning vault copy...")
@@ -261,6 +264,16 @@ async def run_scenario(scenario_type: ScenarioType) -> AsyncGenerator[str, None]
         yield await _emit(4, "CYBERSENSE", StepStatus.COMPLETE,
                    "CyberSense: CORRUPTION DETECTED (99.99% confidence, simulated)",
                    {"confidence": 99.99})
+
+    # ── PAUSE after Step 4 ──
+    _resume_event = asyncio.Event()
+    yield await _emit(4, "PAUSE", StepStatus.COMPLETE,
+               "Corruption confirmed — click to continue",
+               {"pause_type": "continue"})
+    try:
+        await _resume_event.wait()
+    finally:
+        _resume_event = None
 
     # ── Step 5: FORENSICS ───────────────────────────────────────────
     yield await _emit(5, "FORENSICS", StepStatus.RUNNING, "Extracting forensic data...")
@@ -319,8 +332,15 @@ async def run_scenario(scenario_type: ScenarioType) -> AsyncGenerator[str, None]
         except Exception as e:
             logger.error(f"ServiceNow work note error: {e}")
 
-    # Narrative beat — presenter returns to dashboard, sees CyberSense report
-    await asyncio.sleep(3.0)
+    # ── PAUSE after Step 5 ──
+    _resume_event = asyncio.Event()
+    yield await _emit(5, "PAUSE", StepStatus.COMPLETE,
+               "Forensics complete — click to begin recovery",
+               {"pause_type": "continue"})
+    try:
+        await _resume_event.wait()
+    finally:
+        _resume_event = None
 
     # ── Step 6: RECOVER ─────────────────────────────────────────────
     yield await _emit(6, "RECOVER", StepStatus.RUNNING,
@@ -338,8 +358,15 @@ async def run_scenario(scenario_type: ScenarioType) -> AsyncGenerator[str, None]
                    "Recovery complete: 1704 files restored (simulated)",
                    {"pit_id": pit_id, "restored_files": 1704})
 
-    # Narrative beat — let recovery completion register
-    await asyncio.sleep(2.0)
+    # ── PAUSE after Step 6 ──
+    _resume_event = asyncio.Event()
+    yield await _emit(6, "PAUSE", StepStatus.COMPLETE,
+               "Recovery complete — click to resolve incident",
+               {"pause_type": "continue"})
+    try:
+        await _resume_event.wait()
+    finally:
+        _resume_event = None
 
     # ── Step 7: RESOLVE ─────────────────────────────────────────────
     yield await _emit(7, "RESOLVE", StepStatus.RUNNING,

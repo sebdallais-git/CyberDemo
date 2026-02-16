@@ -49,9 +49,11 @@
                                'text-emerald-300 font-semibold': paused && index === pauseStepIndex && !pauseUrl,
                            }"
                            x-text="paused && index === pauseStepIndex && pauseUrl
-                               ? (pauseType === 'snowflake' ? '\u2190 Click to view Snowflake threat analysis' : '\u2190 Click to open ServiceNow incident')
+                               ? (pauseType === 'snowflake' ? '\u2190 Click to open Snowflake threat scores'
+                                   : pauseType === 'servicenow' ? '\u2190 Click to open ServiceNow incident'
+                                   : '\u2190 Click to open')
                                : paused && index === pauseStepIndex && !pauseUrl
-                                   ? '\u2190 Click to continue recovery workflow'
+                                   ? '\u2190 Click to continue'
                                    : steps[index] ? steps[index].message : step.waiting"></p>
                         <!-- Databricks button — appears during AI Factory pause -->
                         <button x-show="paused && index === pauseStepIndex && databricksUrl"

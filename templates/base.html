@@ -55,7 +55,7 @@
         {% block content %}{% endblock %}
     </main>
 
-    <script src="/static/js/app.js"></script>
+    <script src="/static/js/app.js?v={{ range(100000) | random }}"></script>
     <script src="/static/js/agents.js"></script>
 </body>
 </html>

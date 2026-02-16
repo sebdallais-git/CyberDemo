@@ -118,6 +118,7 @@ function cyberDemo() {
             model_version: "",
         },
 
+
         // Connectivity status
         snowAvailable: false,
         dellcrAvailable: false,
@@ -375,11 +376,11 @@ function cyberDemo() {
                     break;
 
                 case "PAUSE":
-                    // Presenter pause — can happen after any step
+                    // Presenter pause — user clicks to open page, auto-resumes when they return
                     this.paused = true;
                     this.pauseStepIndex = event.step - 1; // 0-indexed
-                    this.pauseUrl = data.pause_url || "";
                     this.pauseType = data.pause_type || "";
+                    this.pauseUrl = data.pause_url || "";
                     this.databricksUrl = data.databricks_url || "";
                     break;
 
@@ -393,14 +394,25 @@ function cyberDemo() {
             }
         },
 
-        /** Open the pause target in a new tab, then resume the scenario.
-         *  Click sequence: open primary URL → open Databricks (if present) → resume. */
+        /** Open external page and auto-resume when user switches back to this tab. */
         async handlePauseAction() {
             if (this.pauseUrl) {
                 window.open(this.pauseUrl, '_blank');
                 this.pauseUrl = "";
+                // Auto-resume when the user switches back to the dashboard tab
+                const onReturn = () => {
+                    document.removeEventListener('visibilitychange', onReturn);
+                    if (!document.hidden && this.paused) {
+                        this.paused = false;
+                        this.pauseStepIndex = -1;
+                        this.pauseType = "";
+                        this.databricksUrl = "";
+                        fetch("/api/scenario/resume", { method: "POST" });
+                    }
+                };
+                document.addEventListener('visibilitychange', onReturn);
             } else {
-                // Resume the workflow
+                // No URL — just resume directly
                 this.paused = false;
                 this.pauseStepIndex = -1;
                 this.pauseType = "";
