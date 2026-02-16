@@ -393,7 +393,8 @@ ORDER BY EVENT_TIME ASC;`,
 
         async loadData() {
             try {
-                const resp = await fetch('/api/snowflake/data');
+                // Cache-bust to avoid Safari returning stale data from a previous scenario
+                const resp = await fetch('/api/snowflake/data?t=' + Date.now());
                 if (!resp.ok) throw new Error('HTTP ' + resp.status);
                 const json = await resp.json();
                 if (json.error) throw new Error(json.error);

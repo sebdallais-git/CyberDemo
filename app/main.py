@@ -89,15 +89,23 @@ async def resume_scenario():
 
 @app.get("/api/snowflake/data")
 async def snowflake_data():
-    """Return raw SIEM table data for the Snowflake worksheet page."""
+    """Return raw SIEM table data for the Snowflake worksheet page.
+
+    No-cache headers prevent Safari/iPad from serving stale data
+    when switching between scenarios.
+    """
+    from fastapi.responses import JSONResponse
     from app.snowflake_client import snowflake_client
     try:
         data = await snowflake_client.get_siem_data()
-        return data
+        return JSONResponse(content=data, headers={"Cache-Control": "no-store"})
     except Exception as e:
         logger.error(f"Snowflake data endpoint error: {e}")
-        return {"error": str(e), "anomaly_scores": [], "endpoint_events": [],
-                "network_events": [], "detection_results": []}
+        return JSONResponse(
+            content={"error": str(e), "anomaly_scores": [], "endpoint_events": [],
+                     "network_events": [], "detection_results": []},
+            headers={"Cache-Control": "no-store"},
+        )
 
 
 @app.get("/api/status")
